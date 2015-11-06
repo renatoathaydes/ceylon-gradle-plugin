@@ -1,0 +1,16 @@
+*.class
+*.jar
+
+.classpath
+.project
+*.iml
+.idea/
+.gradle/
+build/
+
+.ceylon/*
+.exploded/*
+.settings/*
+modules/*
+/.exploded/
+/bin/
