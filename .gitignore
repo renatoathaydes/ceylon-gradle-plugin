@@ -7,10 +7,11 @@
 .idea/
 .gradle/
 build/
+auto-generated/
 
-.ceylon/*
-.exploded/*
-.settings/*
-modules/*
-/.exploded/
-/bin/
+.ceylon/
+.exploded/
+.settings/
+modules/
+.exploded/
+bin/
