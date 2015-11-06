@@ -1,0 +1,22 @@
+buildscript {
+    repositories {
+        flatDir {
+            dirs '../build/libs'
+        }
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.0-SNAPSHOT"
+    }
+}
+
+apply plugin: 'com.athaydes.ceylon'
+
+group 'com.athaydes.gradle.ceylon'
+version '1.0-SNAPSHOT'
+
+ceylon {
+    modules = "com.athaydes.maven"
+    flatClassPath = true
+}
