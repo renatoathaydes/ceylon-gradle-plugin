@@ -1,7 +1,6 @@
 package com.athaydes.gradle.ceylon.parse
 
 import groovy.transform.CompileStatic
-import groovy.transform.TailRecursive
 
 import java.util.regex.Matcher
 
@@ -42,10 +41,10 @@ class CeylonModuleParser {
     static final versionRegex = /^\"[a-zA-Z_0-9][a-zA-Z_0-9\.]*\"/
 
     private state = new ModuleDeclarationState()
-    private boolean inBlockComment = false
     private int currentLine = 0
     private String fileName
     private LinkedList<String> words = [ ]
+    private boolean lineComment = false
 
     Map parse( String name, String text ) {
         fileName = name
@@ -55,29 +54,26 @@ class CeylonModuleParser {
 
         lineLoop:
         while ( lines ) {
-            def line = lines.removeFirst().trim()
-            currentLine++
-            println "Line [$currentLine]: $line"
-            def nonComments = nonCommentsFrom( line, [ ] ) as LinkedList<String>
-            println "Non-comments: $nonComments"
+            words = lines.removeFirst().split( ' ' )
+                    .findAll { !it.empty } as LinkedList<String>
 
-            while ( nonComments ) {
-                words = nonComments.removeFirst().split( ' ' ).findAll { !it.empty } as LinkedList<String>
-                println "Looking at words: $words"
-                while ( words ) {
-                    def word = words.removeFirst()
-                    switch ( state ) {
-                        case ModuleDeclarationState:
-                            parseModuleDeclaration( word, result )
-                            break
-                        case ModuleImportsState:
-                            parseModuleImports( word, result )
-                            break
-                        case DoneState:
-                            break lineLoop
-                        default:
-                            throw error( "internal state not recognized: $state" )
-                    }
+            currentLine++
+            lineComment = false
+
+            println "Looking at words: $words"
+            while ( words && !lineComment ) {
+                def word = words.removeFirst()
+                switch ( state ) {
+                    case ModuleDeclarationState:
+                        parseModuleDeclaration( word, result )
+                        break
+                    case ModuleImportsState:
+                        parseModuleImports( word, result )
+                        break
+                    case DoneState:
+                        break lineLoop
+                    default:
+                        throw error( "internal state not recognized: $state" )
                 }
             }
         }
@@ -143,6 +139,8 @@ class CeylonModuleParser {
                 this.state = new ModuleDeclarationState()
                 consumeChars lastIndex
             }
+        } else if ( word.startsWith( '//' ) ) {
+            lineComment = true
         } else { // begin
             if ( word == 'module' ) {
                 this.state = new ModuleDeclarationState( parsingName: true )
@@ -220,6 +218,8 @@ class CeylonModuleParser {
             } else {
                 throw error( "expected semi-colon, found '$word'" )
             }
+        } else if ( word.startsWith( '//' ) ) {
+            lineComment = true
         } else { // begin or end
             if ( word == 'import' ) {
                 this.state = new ModuleImportsState( parsingName: true )
@@ -300,48 +300,12 @@ class CeylonModuleParser {
             } else {
                 throw error( "expected '(', found '$word'" )
             }
+        } else if ( word.startsWith( '//' ) ) {
+            lineComment = true
         } else {
             parseAnnotation( word, state,
                     new AnnotationState( parsingName: true ), result )
         }
-    }
-
-    @TailRecursive
-    List<String> nonCommentsFrom( String line, List<String> previous ) {
-        if ( inBlockComment ) {
-            line = afterBlockComment( line )
-        }
-        if ( !inBlockComment ) {
-            def openBlockCommentIndex = line.indexOf( '/*' )
-            if ( openBlockCommentIndex >= 0 ) {
-                def currentLine = line.substring( 0, openBlockCommentIndex ).trim()
-                if ( currentLine ) previous << currentLine
-                line = line.substring( openBlockCommentIndex + 2 ).trim()
-                inBlockComment = true
-            } else {
-                def indexOfCommentStart = line.indexOf( '//' )
-                if ( indexOfCommentStart >= 0 ) {
-                    line = line.substring( 0, indexOfCommentStart ).trim()
-                }
-                line = line.trim()
-                if ( line ) previous << line
-                line = ''
-            }
-        }
-
-        if ( line.trim().empty ) previous
-        else nonCommentsFrom( line, previous )
-    }
-
-    private String afterBlockComment( String line ) {
-        def endCommentIndex = line.indexOf( '*/' )
-        if ( endCommentIndex >= 0 ) {
-            line = line.substring( endCommentIndex + 2 ).trim()
-            inBlockComment = false
-        } else {
-            line = ''
-        }
-        line
     }
 
     private RuntimeException error( String message ) {
