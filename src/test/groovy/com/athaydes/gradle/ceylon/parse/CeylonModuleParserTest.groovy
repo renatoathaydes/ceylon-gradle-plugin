@@ -161,7 +161,7 @@ class CeylonModuleParserTest {
     void "Can parse a module file with annotated imports and module"() {
         def result = parser.parse 'myfile.ceylon', """
                 "An example module
-                 with \"lots\" of annotations"
+                 with \\"lots\\" of annotations"
                 shared("jvm")
                 module com.hello.world "1.0.0" {
                     shared import java.lang.base  "7";

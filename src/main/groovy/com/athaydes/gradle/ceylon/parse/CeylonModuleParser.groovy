@@ -45,6 +45,7 @@ class CeylonModuleParser {
     private String fileName
     private LinkedList<String> words = [ ]
     private boolean lineComment = false
+    private boolean blockComment = false
 
     Map parse( String name, String text ) {
         fileName = name
@@ -180,6 +181,7 @@ class CeylonModuleParser {
         } else if ( state.parsingAnnotationState ) {
             parseAnnotation( word, state, state.parsingAnnotationState, result )
         } else if ( state.parsingName ) {
+            println "Trying to parse import module name: $word"
             def nameMatcher = ( word =~ moduleIdentifierRegex )
             def mavenNameMatcher = ( word =~ mavenModuleIdentifierRegex )
             def matcher = nameMatcher.find() ? nameMatcher :
@@ -221,6 +223,7 @@ class CeylonModuleParser {
         } else if ( word.startsWith( '//' ) ) {
             lineComment = true
         } else { // begin or end
+            println "Started parsing module imports, looking at $word"
             if ( word == 'import' ) {
                 this.state = new ModuleImportsState( parsingName: true )
             } else if ( word.startsWith( '"' ) ) {
@@ -230,7 +233,9 @@ class CeylonModuleParser {
                 this.state = new DoneState()
             } else {
                 this.state = new ModuleImportsState(
-                        parsingAnnotationState: new AnnotationState() )
+                        parsingAnnotationState: new AnnotationState( parsingName: true ) )
+                // put word back in the queue as we don't know what it is
+                words.addFirst( word )
             }
         }
     }
@@ -239,6 +244,7 @@ class CeylonModuleParser {
                                   BaseState state,
                                   AnnotationState aState,
                                   Map result ) {
+        println "Parsing annotation: $word"
         def consumeChars = { int count ->
             if ( count < word.size() ) {
                 word = word[ count..-1 ]
@@ -248,57 +254,77 @@ class CeylonModuleParser {
         }
 
         if ( aState.parsingName ) {
-            Matcher nameMatcher = ( word =~ annotationNameRegex )
-            if ( nameMatcher.find() ) {
-                int lastIndex = nameMatcher.end()
-                def annotation = word[ 0..<lastIndex ]
-                if ( annotation == 'shared' ) {
-                    result.shared = true
-                }
-                state.parsingAnnotationState = new AnnotationState( parsingOpenBracket: true )
-                consumeChars lastIndex
+            if ( state instanceof ModuleImportsState && word == 'import' ) {
+                println "Import is no annotation, moving to parseModuleImports"
+                this.state = new ModuleImportsState( parsingName: true )
             } else {
-                throw error( "expected annotation or module name, found '$word'" )
+                Matcher nameMatcher = ( word =~ annotationNameRegex )
+                if ( nameMatcher.find() ) {
+                    int lastIndex = nameMatcher.end()
+                    def annotation = word[ 0..<lastIndex ]
+                    if ( annotation == 'shared' ) {
+                        if ( state instanceof ModuleDeclarationState ) {
+                            result.shared = true
+                        } else {
+                            def imports = getImports( result )
+                            imports << [ shared: true ]
+                        }
+                    }
+                    aState = new AnnotationState( parsingOpenBracket: true )
+                    state.parsingAnnotationState = aState
+                    consumeChars lastIndex
+                } else {
+                    throw error( "expected annotation or module name, found '$word'" )
+                }
             }
         } else if ( aState.parsingArgument ) {
             Matcher unescapedDelimiterMatcher = ( word =~ /.*(?<!\\)"/ )
             if ( unescapedDelimiterMatcher.find() ) {
-                state.parsingAnnotationState =
-                        new AnnotationState( parsingCloseBracket: true )
+                aState = new AnnotationState( parsingCloseBracket: true )
+                state.parsingAnnotationState = aState
                 def lastIndex = unescapedDelimiterMatcher.end()
                 consumeChars lastIndex
             }
         } else if ( aState.parsingOpenBracket ) {
             if ( word.startsWith( '(' ) ) {
-                state.parsingAnnotationState =
-                        new AnnotationState( afterOpenBracket: true )
+                aState = new AnnotationState( afterOpenBracket: true )
+                state.parsingAnnotationState = aState
                 consumeChars 1
             } else {
-                throw error( "expected '(', found '$word'" )
+                // get out of annotation parsing as annotations don't need args
+                words.addFirst( word )
+                if ( state instanceof ModuleDeclarationState ) {
+                    this.state = new ModuleDeclarationState()
+                } else {
+                    this.state = new ModuleImportsState()
+                }
             }
         } else if ( aState.afterOpenBracket ) {
             if ( word.startsWith( '"' ) ) {
-                state.parsingAnnotationState =
-                        new AnnotationState( parsingArgument: true )
+                aState = new AnnotationState( parsingArgument: true )
+                state.parsingAnnotationState = aState
                 consumeChars 1
             } else {
-                state.parsingAnnotationState =
-                        new AnnotationState( parsingCloseBracket: true )
+                aState = new AnnotationState( parsingCloseBracket: true )
+                state.parsingAnnotationState = aState
             }
         } else if ( aState.parsingCloseBracket ) {
             if ( word.startsWith( ')' ) ) {
-                word = word[ 1..-1 ]
-                if ( word ) {
+                if ( state instanceof ModuleDeclarationState ) {
+                    this.state = new ModuleDeclarationState()
+                } else {
+                    this.state = new ModuleImportsState()
+                }
+                if ( word.size() > 1 ) {
+                    word = word[ 1..-1 ]
                     if ( state instanceof ModuleDeclarationState ) {
-                        this.state = new ModuleDeclarationState()
                         parseModuleDeclaration( word, result )
                     } else {
-                        this.state = new ModuleImportsState()
                         parseModuleImports( word, result )
                     }
                 }
             } else {
-                throw error( "expected '(', found '$word'" )
+                throw error( "expected annotation ')', found '$word'" )
             }
         } else if ( word.startsWith( '//' ) ) {
             lineComment = true
