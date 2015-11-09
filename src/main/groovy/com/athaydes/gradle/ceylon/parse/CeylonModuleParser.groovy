@@ -3,78 +3,89 @@ package com.athaydes.gradle.ceylon.parse
 import groovy.transform.CompileStatic
 import groovy.transform.TailRecursive
 
+import java.util.regex.Matcher
+
+class AnnotationState {
+    boolean parsingName = false
+    boolean parsingOpenBracket = false
+    boolean afterOpenBracket = false // could be close bracket or argument
+    boolean parsingArgument = false
+    boolean parsingCloseBracket = false
+}
+
+abstract class BaseState {
+    boolean parsingDocs = false
+    AnnotationState parsingAnnotationState = null
+    boolean parsingName = false
+    boolean parsingVersion = false
+}
+
+class ModuleDeclarationState extends BaseState {
+    boolean parsingStartModule = false
+}
+
+class ModuleImportsState extends BaseState {
+    boolean parsingSemiColon = false
+}
+
+class DoneState {}
+
 /**
  * Parser of Ceylon module files.
  */
 @CompileStatic
 class CeylonModuleParser {
 
+    static final moduleIdentifierRegex = /^[a-z][a-zA-Z_0-9\.]*[a-zA-Z_0-9]/
+    static final mavenModuleIdentifierRegex = /^"[a-z][a-zA-Z_0-9\.:]*[a-zA-Z_0-9]"/
+    static final annotationNameRegex = /^[a-z_][a-zA-Z_0-9]*/
+    static final versionRegex = /^\"[a-zA-Z_0-9][a-zA-Z_0-9\.]*\"/
+
+    private state = new ModuleDeclarationState()
     private boolean inBlockComment = false
-    private boolean inDocComment = false
-    private boolean inModule = false
-    private boolean parsingImport = false
-    private boolean parsingName = false
-    private boolean parsingVersion = false
-    private boolean parsingStartModule = false
-    private boolean parsingSemiColon = false
     private int currentLine = 0
     private String fileName
+    private LinkedList<String> words = [ ]
 
     Map parse( String name, String text ) {
         fileName = name
         final result = [ : ]
-        final lines = text.readLines()
+        final lines = text.readLines() as LinkedList<String>
         println "Starting parser ..."
 
         lineLoop:
-        for ( line in lines ) {
-            line = line.trim()
+        while ( lines ) {
+            def line = lines.removeFirst().trim()
             currentLine++
             println "Line [$currentLine]: $line"
             def nonComments = nonCommentsFrom( line, [ ] ) as LinkedList<String>
             println "Non-comments: $nonComments"
 
             while ( nonComments ) {
-                def words = nonComments.removeFirst().split( ' ' ).findAll { !it.empty } as LinkedList<String>
+                words = nonComments.removeFirst().split( ' ' ).findAll { !it.empty } as LinkedList<String>
                 println "Looking at words: $words"
-                if ( !inModule && !parsingName ) {
-                    String first = words.removeFirst()
-                    if ( first != 'module' ) {
-                        throw new RuntimeException( error( "expected 'module', found '$first'" ) )
-                    } else {
-                        parsingName = true
-                    }
-                }
-                for ( String word in words ) {
-                    println "Word: $word"
-                    if ( parsingName ) {
-                        println "Parsing name"
-                        parseName word, result
-                    } else if ( parsingVersion ) {
-                        println "Parsing version"
-                        parseVersion word, result
-                    } else if ( inModule && parsingImport ) {
-                        if ( word == '}' ) break lineLoop
-                        println "Parsing import"
-                        if ( word == 'shared' ) {
-                            def imports = getImports( result )
-                            imports << [ shared: true ]
-                        } else {
-                            parseImport word
-                        }
-                    } else if ( !inModule && parsingStartModule ) {
-                        println "Parsing startModule"
-                        parseStartModule word
-                    } else if ( inModule && parsingSemiColon ) {
-                        println "Parsing semi-colon"
-                        if ( word == '}' ) break lineLoop
-                        parseSemiColon word
-                    } else {
-                        throw new RuntimeException( error( "Unexpected '$word'" ) )
+                while ( words ) {
+                    def word = words.removeFirst()
+                    switch ( state ) {
+                        case ModuleDeclarationState:
+                            parseModuleDeclaration( word, result )
+                            break
+                        case ModuleImportsState:
+                            parseModuleImports( word, result )
+                            break
+                        case DoneState:
+                            break lineLoop
+                        default:
+                            throw error( "internal state not recognized: $state" )
                     }
                 }
             }
         }
+
+        if ( words || lines ) {
+            throw error( "expected end of module declaration" )
+        }
+
         return result
     }
 
@@ -82,84 +93,216 @@ class CeylonModuleParser {
         result.get( 'imports', [ ] ) as List<Map>
     }
 
-    private void parseName( String word, Map result ) {
-        String name = getName( word )
-        if ( inModule ) {
-            def imports = getImports( result )
-            if ( !imports.empty && !imports.last().name ) { // newest entry has no name yet
-                assert imports.last().containsKey( 'shared' )
-                imports.last().name = name
-            } else {
-                imports << [ name: name ]
+    private void parseModuleDeclaration( String word,
+                                         Map result ) {
+        def state = this.state as ModuleDeclarationState
+
+        def consumeChars = { int count ->
+            if ( count < word.size() ) {
+                word = word[ count..-1 ]
+                println "Looking a shortened word '$word'"
+                parseModuleDeclaration( word, result )
             }
-        } else {
-            result.moduleName = name
         }
-        parsingName = false
-        parsingVersion = true
+
+        if ( state.parsingAnnotationState ) {
+            AnnotationState aState = state.parsingAnnotationState
+            parseAnnotation word, state, aState, result
+        } else if ( state.parsingName ) {
+            def moduleNameMatcher = ( word =~ moduleIdentifierRegex )
+            if ( moduleNameMatcher.find() ) {
+                def lastIndex = moduleNameMatcher.end()
+                result.moduleName = word[ 0..<lastIndex ]
+                this.state = new ModuleDeclarationState( parsingVersion: true )
+                consumeChars lastIndex
+            } else {
+                throw error( "expected module name, found '$word'" )
+            }
+        } else if ( state.parsingVersion ) {
+            def versionMatcher = ( word =~ versionRegex )
+            if ( versionMatcher.find() ) {
+                def lastIndex = versionMatcher.end()
+                result.version = word[ 1..( lastIndex - 2 ) ]
+                this.state = new ModuleDeclarationState( parsingStartModule: true )
+                consumeChars lastIndex
+            } else {
+                throw error( "expected module version, found $word" )
+            }
+        } else if ( state.parsingStartModule ) {
+            if ( word.startsWith( '{' ) ) {
+                this.state = new ModuleImportsState()
+                if ( word.length() > 1 ) {
+                    words.addFirst( word[ 1..-1 ] )
+                }
+            }
+        } else if ( state.parsingDocs ) {
+            Matcher unescapedDelimiterMatcher = ( word =~ /.*(?<!\\)"/ )
+            if ( unescapedDelimiterMatcher.find() ) {
+                def lastIndex = unescapedDelimiterMatcher.end()
+                result.hasDocs = true
+                this.state = new ModuleDeclarationState()
+                consumeChars lastIndex
+            }
+        } else { // begin
+            if ( word == 'module' ) {
+                this.state = new ModuleDeclarationState( parsingName: true )
+            } else if ( word.startsWith( '"' ) ) {
+                if ( result.hasDocs ) {
+                    throw error( 'more than one doc String is not allowed' )
+                }
+                this.state = new ModuleDeclarationState( parsingDocs: true )
+                consumeChars 1
+            } else {
+                def aState = new AnnotationState( parsingName: true )
+                this.state = new ModuleDeclarationState(
+                        parsingAnnotationState: aState )
+                parseAnnotation( word, state, aState, result )
+            }
+        }
     }
 
-    private void parseVersion( String word, Map result ) {
-        def version = getUnquoted( word )
-        if ( version ) {
-            if ( inModule ) {
+    private void parseModuleImports( String word, Map result ) {
+        def state = this.state as ModuleImportsState
+
+        def consumeChars = { int count ->
+            if ( count < word.size() ) {
+                word = word[ count..-1 ]
+                println "Looking a shortened word '$word'"
+                parseModuleImports( word, result )
+            }
+        }
+
+        if ( state.parsingDocs ) {
+            Matcher unescapedDelimiterMatcher = ( word =~ /.*(?<!\\)"/ )
+            if ( unescapedDelimiterMatcher.find() ) {
+                def lastIndex = unescapedDelimiterMatcher.end()
+                this.state = new ModuleImportsState()
+                consumeChars lastIndex
+            }
+        } else if ( state.parsingAnnotationState ) {
+            parseAnnotation( word, state, state.parsingAnnotationState, result )
+        } else if ( state.parsingName ) {
+            def nameMatcher = ( word =~ moduleIdentifierRegex )
+            def mavenNameMatcher = ( word =~ mavenModuleIdentifierRegex )
+            def matcher = nameMatcher.find() ? nameMatcher :
+                    mavenNameMatcher.find() ? mavenNameMatcher : null
+            if ( matcher != null ) {
+                def lastIndex = matcher.end()
+                def name = mavenNameMatcher.is( matcher ) ?
+                        word[ 1..( lastIndex - 2 ) ] :
+                        word[ 0..<lastIndex ]
                 def imports = getImports( result )
-                imports.last().version = version
-                if ( word.endsWith( ';' ) ) parsingImport = true
-                else parsingSemiColon = true
+                if ( !imports.empty && !imports.last().name ) { // newest entry has no name yet
+                    assert imports.last().containsKey( 'shared' )
+                    imports.last().name = word
+                } else {
+                    imports << [ name: name ]
+                }
+                this.state = new ModuleImportsState( parsingVersion: true )
             } else {
-                result.version = version
-                parsingStartModule = true
+                throw error( "expected imported module name, found '$word'" )
             }
-            parsingVersion = false
-        } else {
-            throw new RuntimeException( error( "Expected version String, found '$word'" ) )
-        }
-    }
-
-    private void parseImport( String word ) {
-        if ( word == 'import' ) {
-            parsingName = true
-            parsingImport = false
-        } else {
-            throw new RuntimeException( error( "Expected 'import', found '$word'" ) )
-        }
-    }
-
-    private void parseStartModule( String word ) {
-        if ( word == '{' ) {
-            parsingImport = true
-            parsingStartModule = false
-            inModule = true
-        } else {
-            throw new RuntimeException( error( "Expected '{', found '$word'" ) )
-        }
-    }
-
-    private void parseSemiColon( String word ) {
-        if ( word == ';' ) {
-            parsingImport = true
-            parsingSemiColon = false
-        } else {
-            throw new RuntimeException( error( "Expected ';', found '$word'" ) )
-        }
-    }
-
-    private String getName( String word ) {
-        getUnquoted( word ) ?: word
-    }
-
-    private String getUnquoted( String word ) {
-        if ( word.startsWith( '"' ) ) {
-            def endOfWord = word.indexOf( '"', 1 )
-            if ( endOfWord > 0 ) {
-                return word.substring( 1, endOfWord )
-
+        } else if ( state.parsingVersion ) {
+            def versionMatcher = ( word =~ versionRegex )
+            if ( versionMatcher.find() ) {
+                def imports = getImports( result )
+                def lastIndex = versionMatcher.end()
+                imports.last().version = word[ 1..( lastIndex - 2 ) ]
+                this.state = new ModuleImportsState( parsingSemiColon: true )
+                consumeChars lastIndex
             } else {
-                throw new RuntimeException( error( "String literal not terminated: ${word}" ) )
+                throw error( "expected module version, found '$word'" )
+            }
+        } else if ( state.parsingSemiColon ) {
+            if ( word.startsWith( ';' ) ) {
+                this.state = new ModuleImportsState()
+                consumeChars 1
+            } else {
+                throw error( "expected semi-colon, found '$word'" )
+            }
+        } else { // begin or end
+            if ( word == 'import' ) {
+                this.state = new ModuleImportsState( parsingName: true )
+            } else if ( word.startsWith( '"' ) ) {
+                this.state = new ModuleImportsState( parsingDocs: true )
+                consumeChars 1
+            } else if ( word == '}' ) {
+                this.state = new DoneState()
+            } else {
+                this.state = new ModuleImportsState(
+                        parsingAnnotationState: new AnnotationState() )
+            }
+        }
+    }
+
+    private void parseAnnotation( String word,
+                                  BaseState state,
+                                  AnnotationState aState,
+                                  Map result ) {
+        def consumeChars = { int count ->
+            if ( count < word.size() ) {
+                word = word[ count..-1 ]
+                println "Looking a shortened word '$word'"
+                parseAnnotation( word, state, aState, result )
+            }
+        }
+
+        if ( aState.parsingName ) {
+            Matcher nameMatcher = ( word =~ annotationNameRegex )
+            if ( nameMatcher.find() ) {
+                int lastIndex = nameMatcher.end()
+                def annotation = word[ 0..<lastIndex ]
+                if ( annotation == 'shared' ) {
+                    result.shared = true
+                }
+                state.parsingAnnotationState = new AnnotationState( parsingOpenBracket: true )
+                consumeChars lastIndex
+            } else {
+                throw error( "expected annotation or module name, found '$word'" )
+            }
+        } else if ( aState.parsingArgument ) {
+            Matcher unescapedDelimiterMatcher = ( word =~ /.*(?<!\\)"/ )
+            if ( unescapedDelimiterMatcher.find() ) {
+                state.parsingAnnotationState =
+                        new AnnotationState( parsingCloseBracket: true )
+                def lastIndex = unescapedDelimiterMatcher.end()
+                consumeChars lastIndex
+            }
+        } else if ( aState.parsingOpenBracket ) {
+            if ( word.startsWith( '(' ) ) {
+                state.parsingAnnotationState =
+                        new AnnotationState( afterOpenBracket: true )
+                consumeChars 1
+            } else {
+                throw error( "expected '(', found '$word'" )
+            }
+        } else if ( aState.afterOpenBracket ) {
+            if ( word.startsWith( '"' ) ) {
+                state.parsingAnnotationState =
+                        new AnnotationState( parsingArgument: true )
+                consumeChars 1
+            } else {
+                state.parsingAnnotationState =
+                        new AnnotationState( parsingCloseBracket: true )
+            }
+        } else if ( aState.parsingCloseBracket ) {
+            if ( word.startsWith( ')' ) ) {
+                word = word[ 1..-1 ]
+                if ( word ) {
+                    if ( state instanceof ModuleDeclarationState ) {
+                        this.state = new ModuleDeclarationState()
+                        parseModuleDeclaration( word, result )
+                    } else {
+                        this.state = new ModuleImportsState()
+                        parseModuleImports( word, result )
+                    }
+                }
+            } else {
+                throw error( "expected '(', found '$word'" )
             }
         } else {
-            return null
+            parseAnnotation( word, state,
+                    new AnnotationState( parsingName: true ), result )
         }
     }
 
@@ -169,10 +312,6 @@ class CeylonModuleParser {
             line = afterBlockComment( line )
         }
         if ( !inBlockComment ) {
-            def indexOfCommentStart = line.indexOf( '//' )
-            if ( indexOfCommentStart >= 0 ) {
-                line = line.substring( 0, indexOfCommentStart ).trim()
-            }
             def openBlockCommentIndex = line.indexOf( '/*' )
             if ( openBlockCommentIndex >= 0 ) {
                 def currentLine = line.substring( 0, openBlockCommentIndex ).trim()
@@ -180,6 +319,10 @@ class CeylonModuleParser {
                 line = line.substring( openBlockCommentIndex + 2 ).trim()
                 inBlockComment = true
             } else {
+                def indexOfCommentStart = line.indexOf( '//' )
+                if ( indexOfCommentStart >= 0 ) {
+                    line = line.substring( 0, indexOfCommentStart ).trim()
+                }
                 line = line.trim()
                 if ( line ) previous << line
                 line = ''
@@ -201,8 +344,9 @@ class CeylonModuleParser {
         line
     }
 
-    private String error( String message ) {
-        "Cannot parse module [$fileName]. Error on line $currentLine: $message"
+    private RuntimeException error( String message ) {
+        new RuntimeException( "Cannot parse module [$fileName]. " +
+                "Error on line $currentLine: $message" )
     }
 
 }
