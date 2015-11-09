@@ -36,7 +36,7 @@ class DoneState {}
 class CeylonModuleParser {
 
     static final moduleIdentifierRegex = /^[a-z][a-zA-Z_0-9\.]*[a-zA-Z_0-9]/
-    static final mavenModuleIdentifierRegex = /^"[a-z][a-zA-Z_0-9\.:]*[a-zA-Z_0-9]"/
+    static final mavenModuleIdentifierRegex = /^"[a-z][a-zA-Z_0-9\.:\-]*[a-zA-Z_0-9]"/
     static final annotationNameRegex = /^[a-z_][a-zA-Z_0-9]*/
     static final versionRegex = /^\"[a-zA-Z_0-9][a-zA-Z_0-9\.]*\"/
 
