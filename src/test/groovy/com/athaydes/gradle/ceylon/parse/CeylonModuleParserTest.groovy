@@ -202,4 +202,32 @@ class CeylonModuleParserTest {
                 [ name: 'javax.sql', version: '4.0' ]
         ]
     }
+
+    @Test
+    void "Can parse a module file with comments everywhere"() {
+        def result = parser.parse 'myfile.ceylon', """
+                // some module
+                module // comment
+                com.hello.world /* not code */ "1.0.0"
+                {// comment
+                    import /*
+                    crazy but possible
+                    */
+                    java.lang.base  "7" /* ?? */;
+                } // done
+
+                /*
+                   comment
+                */
+                //END
+                """
+
+        assert result
+        assert result.moduleName == 'com.hello.world'
+        assert result.version == '1.0.0'
+        assert result.imports == [
+                [ name: 'java.lang.base', version: '7' ]
+        ]
+    }
+
 }

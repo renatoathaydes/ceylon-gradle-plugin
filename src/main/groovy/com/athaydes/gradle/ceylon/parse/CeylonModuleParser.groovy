@@ -83,11 +83,6 @@ class CeylonModuleParser {
             }
         }
 
-        if ( words || lines ) {
-            def notRead = words ?: lines
-            throw error( "expected end of module declaration, found $notRead" )
-        }
-
         return result
     }
 
@@ -108,6 +103,8 @@ class CeylonModuleParser {
         } else if ( word.startsWith( '/*' ) && !state.parsingDocs ) {
             blockComment = true
             consumeChars 2, word, result
+        } else if ( word.startsWith( '//' ) ) {
+            lineComment = true
         } else if ( state.parsingAnnotationState ) {
             AnnotationState aState = state.parsingAnnotationState
             parseAnnotation word, state, aState, result
@@ -146,8 +143,6 @@ class CeylonModuleParser {
                 this.state = new ModuleDeclarationState()
                 consumeChars lastIndex, word, result
             }
-        } else if ( word.startsWith( '//' ) ) {
-            lineComment = true
         } else { // begin
             if ( word == 'module' ) {
                 this.state = new ModuleDeclarationState( parsingName: true )
@@ -173,9 +168,6 @@ class CeylonModuleParser {
                 def lastIndex = endBlockMatcher.end()
                 consumeChars lastIndex, word, result
             }
-        } else if ( word.startsWith( '/*' ) && !state.parsingDocs ) {
-            blockComment = true
-            consumeChars 2, word, result
         } else if ( state.parsingDocs ) {
             Matcher unescapedDelimiterMatcher = ( word =~ nonEscapedQuoteRegex )
             if ( unescapedDelimiterMatcher.find() ) {
@@ -183,6 +175,11 @@ class CeylonModuleParser {
                 this.state = new ModuleImportsState()
                 consumeChars lastIndex, word, result
             }
+        } else if ( word.startsWith( '/*' ) ) {
+            blockComment = true
+            consumeChars 2, word, result
+        } else if ( word.startsWith( '//' ) ) {
+            lineComment = true
         } else if ( state.parsingAnnotationState ) {
             parseAnnotation( word, state, state.parsingAnnotationState, result )
         } else if ( state.parsingName ) {
@@ -224,8 +221,6 @@ class CeylonModuleParser {
             } else {
                 throw error( "expected semi-colon, found '$word'" )
             }
-        } else if ( word.startsWith( '//' ) ) {
-            lineComment = true
         } else { // begin or end
             if ( word == 'import' ) {
                 this.state = new ModuleImportsState( parsingName: true )
@@ -254,9 +249,18 @@ class CeylonModuleParser {
                 def lastIndex = endBlockMatcher.end()
                 consumeChars lastIndex, word, result
             }
-        } else if ( word.startsWith( '/*' ) && !aState.parsingArgument ) {
+        } else if ( aState.parsingArgument ) {
+            Matcher unescapedDelimiterMatcher = ( word =~ nonEscapedQuoteRegex )
+            if ( unescapedDelimiterMatcher.find() ) {
+                state.parsingAnnotationState = new AnnotationState( parsingCloseBracket: true )
+                def lastIndex = unescapedDelimiterMatcher.end()
+                consumeChars lastIndex, word, result
+            }
+        } else if ( word.startsWith( '/*' ) ) {
             blockComment = true
             consumeChars 2, word, result
+        } else if ( word.startsWith( '//' ) ) {
+            lineComment = true
         } else if ( aState.parsingName ) {
             if ( state instanceof ModuleImportsState && word == 'import' ) {
                 this.state = new ModuleImportsState( parsingName: true )
@@ -280,13 +284,6 @@ class CeylonModuleParser {
                 } else {
                     throw error( "expected annotation or module name, found '$word'" )
                 }
-            }
-        } else if ( aState.parsingArgument ) {
-            Matcher unescapedDelimiterMatcher = ( word =~ nonEscapedQuoteRegex )
-            if ( unescapedDelimiterMatcher.find() ) {
-                state.parsingAnnotationState = new AnnotationState( parsingCloseBracket: true )
-                def lastIndex = unescapedDelimiterMatcher.end()
-                consumeChars lastIndex, word, result
             }
         } else if ( aState.parsingOpenBracket ) {
             if ( word.startsWith( '(' ) ) {
@@ -326,8 +323,6 @@ class CeylonModuleParser {
             } else {
                 throw error( "expected annotation ')', found '$word'" )
             }
-        } else if ( word.startsWith( '//' ) ) {
-            lineComment = true
         } else { // start over
             state.parsingAnnotationState = new AnnotationState( parsingName: true )
         }
