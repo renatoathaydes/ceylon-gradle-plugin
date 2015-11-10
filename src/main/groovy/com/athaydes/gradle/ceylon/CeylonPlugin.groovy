@@ -27,6 +27,9 @@ class CeylonPlugin implements Plugin<Project> {
                         ' that if they require transitive dependencies, they are added to the auto-generated' +
                         ' overrides file.',
                 'generateOverridesFile' ) << {
+            log.debug "Raw config: $config"
+            applyDefaultsTo config
+            log.info "Effective config: $config"
             GenerateOverridesFileTask.run( project, config )
         }
         project.task(
@@ -34,9 +37,6 @@ class CeylonPlugin implements Plugin<Project> {
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylon' ) << {
-            log.debug "Raw config: $config"
-            applyDefaultsTo config
-            log.debug "Effective config: $config"
             CompileCeylonTask.run( project, config )
         }
     }

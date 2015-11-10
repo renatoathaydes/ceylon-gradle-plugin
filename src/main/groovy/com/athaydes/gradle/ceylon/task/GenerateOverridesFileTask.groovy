@@ -11,10 +11,10 @@ class GenerateOverridesFileTask {
     static final Logger log = Logging.getLogger( GenerateOverridesFileTask )
 
     static void run( Project project, CeylonConfig config ) {
+        def moduleNameParts = config.modules.split( /\./ ).toList()
         def modulePath = ( [ config.sourceRoot ] +
-                config.modules.split( '.' ).toList() +
-                [ 'module.ceylon' ] )
-                .join( '/' )
+                moduleNameParts +
+                [ 'module.ceylon' ] ).join( '/' )
 
         def module = project.file( modulePath )
         log.info( "Parsing Ceylon module file at ${module.path}" )
@@ -32,7 +32,7 @@ class GenerateOverridesFileTask {
 
     static Map parse( String moduleText ) {
         // TODO parse the module
-        
+
         [ : ]
     }
 
