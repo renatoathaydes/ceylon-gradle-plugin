@@ -18,7 +18,7 @@ class CeylonModuleParserTest {
            }
            </code>
         */
-        module my.test.module {
+        module my.test.module "2.0" {
            // this is an import
            import other.module "1.0";
         }
@@ -26,7 +26,8 @@ class CeylonModuleParserTest {
 
         assert result
         assert result.moduleName == 'my.test.module'
-        assert result.imports == [ [ module: 'other.module', version: '1.0' ] ]
+        assert result.version == '2.0'
+        assert result.imports == [ [ name: 'other.module', version: '1.0' ] ]
     }
 
     @Test
@@ -46,7 +47,7 @@ class CeylonModuleParserTest {
          "
         module my.test.module "0" {
            "This import is required.
-            The \\"1.0\\" is the version""
+            The \\"1.0\\" is the version!
             "
            import other.module "1.0";
         }
@@ -182,4 +183,23 @@ class CeylonModuleParserTest {
         ]
     }
 
+    @Test
+    void "Can parse module file used in Ceylon Specification"() {
+        def result = parser.parse 'myfile.ceylon', """
+                |"The best-ever ORM solution!"
+                |license ("http://www.gnu.org/licenses/lgpl.html")
+                |module org.hibernate "3.0.0.beta" {
+                |    shared import ceylon.language "1.0.1";
+                |    import javax.sql "4.0";
+                |}
+                |""".stripMargin()
+
+        assert result
+        assert result.moduleName == 'org.hibernate'
+        assert result.version == '3.0.0.beta'
+        assert result.imports == [
+                [ name: 'ceylon.language', version: '1.0.1', shared: true ],
+                [ name: 'javax.sql', version: '4.0' ]
+        ]
+    }
 }
