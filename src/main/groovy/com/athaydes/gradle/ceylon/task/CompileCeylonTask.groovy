@@ -38,16 +38,21 @@ class CompileCeylonTask {
         consume process.in, System.out
         consume process.err, System.err
 
+        def exitCode = -1
         try {
-            def exitCode = process.waitFor()
+            exitCode = process.waitFor()
             log.debug "Ceylon process finished with code $exitCode"
         } catch ( e ) {
             log.warn "Ceylon process did not die gracefully. $e"
         }
+
+        if ( exitCode != 0 ) {
+            throw new GradleException( "Ceylon process exited with code $exitCode. " +
+                    "See output for details." )
+        }
     }
 
     private static void consume( InputStream stream, PrintStream writer ) {
-        // REALLY low-level code necessary here to fix issue #1 (no output in Windows)
         Thread.startDaemon {
             byte[] bytes = new byte[64]
             while ( true ) {
