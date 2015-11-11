@@ -230,4 +230,23 @@ class CeylonModuleParserTest {
         ]
     }
 
+    @Test
+    void "Can parse a realistic module file with tabs indentation"() {
+        def result = parser.parse 'module.ceylon', """\
+        |native("jvm")
+        |module com.athaydes.maven "1.0.0" {
+        |\t\timport java.base "8";
+        |\t\t//import "org.apache.logging.log4j:log4j-api" "2.4.1";
+        |\t\timport "org.apache.logging.log4j:log4j-core" "2.4.1";
+        |}""".stripMargin()
+
+        assert result
+        assert result.moduleName == 'com.athaydes.maven'
+        assert result.version == '1.0.0'
+        assert result.imports == [
+                [ name: 'java.base', version: '8' ],
+                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1' ],
+        ]
+    }
+
 }

@@ -61,7 +61,7 @@ class CeylonModuleParser {
 
         lineLoop:
         while ( lines ) {
-            words = lines.removeFirst().split( ' ' )
+            words = lines.removeFirst().split( /\s/ )
                     .findAll { !it.empty } as LinkedList<String>
 
             currentLine++
