@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon
 
 import com.athaydes.gradle.ceylon.task.CompileCeylonTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
+import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -17,19 +18,33 @@ class CeylonPlugin implements Plugin<Project> {
         CeylonConfig config = project.extensions
                 .create( 'ceylon', CeylonConfig )
 
+        createConfigs project, config
         createTasks project, config
+    }
+
+    private static createConfigs( Project project, CeylonConfig config ) {
+        project.configurations.create 'ceylonCompile'
+        project.configurations.create 'ceylonRuntime'
     }
 
     private static createTasks( Project project, CeylonConfig config ) {
         project.task(
+                description: 'Resolves all legacy dependencies declared in the Ceylon' +
+                        ' module file as well as directly in the Gradle build file.',
+                'resolveCeylonDependencies' ) << {
+            log.debug "Raw config: $config"
+            applyDefaultsTo config
+            log.info "Effective config: $config"
+
+            ResolveCeylonDependenciesTask.run( project, config )
+        }
+        project.task(
+                dependsOn: 'resolveCeylonDependencies',
                 description: 'Generates the overrides.xml file based on the Gradle project dependencies.\n' +
                         ' All Java legacy dependencies declared in the Ceylon module file are checked so' +
                         ' that if they require transitive dependencies, they are added to the auto-generated' +
                         ' overrides file.',
                 'generateOverridesFile' ) << {
-            log.debug "Raw config: $config"
-            applyDefaultsTo config
-            log.info "Effective config: $config"
             GenerateOverridesFileTask.run( project, config )
         }
         project.task(
@@ -39,6 +54,7 @@ class CeylonPlugin implements Plugin<Project> {
                 'compileCeylon' ) << {
             CompileCeylonTask.run( project, config )
         }
+        project.getTasksByName( 'dependencies', false )*.dependsOn( 'resolveCeylonDependencies' )
     }
 
     private static void applyDefaultsTo( CeylonConfig config ) {
@@ -51,4 +67,5 @@ class CeylonPlugin implements Plugin<Project> {
         if ( !config.modules ) throw new GradleException( 'No Ceylon modules have been specified.' +
                 ' Please set "modules" in the "ceylon" configuration' )
     }
+
 }

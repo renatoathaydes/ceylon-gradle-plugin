@@ -1,50 +1,40 @@
 package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.internal.component.external.model.ModuleComponentArtifactIdentifier
 
 class GenerateOverridesFileTask {
 
     static final Logger log = Logging.getLogger( GenerateOverridesFileTask )
 
     static void run( Project project, CeylonConfig config ) {
-        def moduleNameParts = config.modules.split( /\./ ).toList()
-        def modulePath = ( [ config.sourceRoot ] +
-                moduleNameParts +
-                [ 'module.ceylon' ] ).join( '/' )
-
-        def module = project.file( modulePath )
-        log.info( "Parsing Ceylon module file at ${module.path}" )
-
-        if ( !module.file ) {
-            throw new GradleException( 'Ceylon module file does not exist.' +
-                    ' Please make sure that you set "sourceRoot" and "modules"' +
-                    ' correctly in the "ceylon" configuration.' )
-        }
-
-        def dependencies = parse module.text
-
-        generateOverridesFile( dependencies, project.file( config.overrides ) )
+        generateOverridesFile( project, project.file( config.overrides ) )
     }
 
-    static Map parse( String moduleText ) {
-        // TODO parse the module
-
-        [ : ]
-    }
-
-    static void generateOverridesFile( Map dependencies, File overridesFile ) {
+    private static void generateOverridesFile( Project project, File overridesFile ) {
         if ( overridesFile.exists() ) overridesFile.delete()
         overridesFile.parentFile.mkdirs()
 
+        log.info( "Generating Ceylon overrides.xml file at {}", overridesFile )
+
+        def dependencies = ResolveCeylonDependenciesTask.allCompileDeps( project )
+
+        dependencies.each { dep ->
+            def depId = dep.id
+            if ( depId instanceof ModuleComponentArtifactIdentifier ) {
+                def id = depId.componentIdentifier
+                println "Dep name: ${id.group}.${id.module}.${id.version}"
+            } else {
+                log.warn( "Dependency will be ignored as it is of a type not supported " +
+                        "by the Ceylon plugin: $depId TYPE: ${depId?.class?.name}" )
+            }
+        }
+
         overridesFile.withWriter { writer ->
             writer.println( '<overrides>' )
-            dependencies.each { key, val ->
-
-            }
             writer.println( '</overrides>' )
         }
     }

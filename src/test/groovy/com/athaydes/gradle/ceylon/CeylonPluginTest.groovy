@@ -15,8 +15,13 @@ class CeylonPluginTest {
         project.apply plugin: 'com.athaydes.ceylon'
 
         assert project.tasks.compileCeylon
-        assert project.extensions.ceylon instanceof CeylonConfig
-    }
+        assert project.tasks.resolveCeylonDependencies
+        assert project.tasks.generateOverridesFile
 
+        assert project.extensions.ceylon instanceof CeylonConfig
+
+        assert project.configurations.ceylonCompile
+        assert project.configurations.ceylonRuntime
+    }
 
 }
