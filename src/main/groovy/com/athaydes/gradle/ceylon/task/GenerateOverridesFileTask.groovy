@@ -1,10 +1,13 @@
 package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
+import com.athaydes.gradle.ceylon.util.DependencyTree
+import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
-import org.gradle.internal.component.external.model.ModuleComponentArtifactIdentifier
 
 class GenerateOverridesFileTask {
 
@@ -18,18 +21,37 @@ class GenerateOverridesFileTask {
         if ( overridesFile.exists() ) overridesFile.delete()
         overridesFile.parentFile.mkdirs()
 
+        if ( !overridesFile.parentFile.directory ) {
+            throw new GradleException( "Directory of overrides.xml file does not exist " +
+                    "and could not be created. Check access rights to this location: " +
+                    "${overridesFile.parentFile.absolutePath}" )
+        }
+
         log.info( "Generating Ceylon overrides.xml file at {}", overridesFile )
 
-        def dependencies = ResolveCeylonDependenciesTask.allCompileDeps( project )
+        def dependencyTree = ResolveCeylonDependenciesTask.dependencyTreeOf( project )
 
-        dependencies.each { dep ->
-            def depId = dep.id
-            if ( depId instanceof ModuleComponentArtifactIdentifier ) {
-                def id = depId.componentIdentifier
-                println "Dep name: ${id.group}.${id.module}.${id.version}"
+        def problems = dependencyTree.unresolvedDependencies +
+                ( DependencyTree.transitiveDependenciesOf( dependencyTree.resolvedDependencies ).findAll {
+                    it instanceof UnresolvedDependencyResult
+                } as Set<UnresolvedDependencyResult> )
+
+        if ( problems ) {
+            def problemDescription = problems.collect {
+                "  * ${it.attempted.displayName} (${it.attemptedReason.description})"
+            }.join( '\n' )
+            log.error "Unable to resolve the following dependencies:\n" + problemDescription
+            throw new GradleException( 'Module has unresolved dependencies' )
+        }
+
+        dependencyTree.resolvedDependencies.each { dep ->
+            def id = dep.selected.id
+            if ( id instanceof ModuleComponentIdentifier ) {
+                println "Dep name: ${id.group}:${id.module}:${id.version}"
+                println "    ${DependencyTree.transitiveDependenciesOf( dep )}"
             } else {
                 log.warn( "Dependency will be ignored as it is of a type not supported " +
-                        "by the Ceylon plugin: $depId TYPE: ${depId?.class?.name}" )
+                        "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
             }
         }
 

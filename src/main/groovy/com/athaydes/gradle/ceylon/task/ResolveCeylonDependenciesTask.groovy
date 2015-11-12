@@ -2,9 +2,9 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.parse.CeylonModuleParser
+import com.athaydes.gradle.ceylon.util.DependencyTree
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
@@ -38,12 +38,9 @@ class ResolveCeylonDependenciesTask {
         }
     }
 
-    static Set<ResolvedArtifact> allCompileDeps( Project project ) {
-        // TODO get a tree of dependencies as done in
-        // org.gradle.api.tasks.diagnostics.internal.dependencies.AsciiDependencyReportRenderer.render
-        project.configurations.getByName( 'ceylonCompile' )
-                .resolvedConfiguration
-                .resolvedArtifacts
+    static DependencyTree dependencyTreeOf( Project project ) {
+        new DependencyTree( project.configurations.getByName( 'ceylonCompile' )
+                .incoming.resolutionResult.root )
     }
 
     private static void addMavenDependency( Map dependency, Project project ) {
