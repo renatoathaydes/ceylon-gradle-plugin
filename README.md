@@ -8,8 +8,7 @@ Because Ceylon itself manages Ceylon dependencies, this plugin focuses on
 managing legacy Java dependencies so that you can get transitive dependencies
 resolved by Gradle.
 
-Because Ceylon does not resolve transitive Java dependencies, this plugin is
-a real lifesaver while the Ceylon ecosystem is still developing and you need 
+This plugin is a real lifesaver while the Ceylon ecosystem is still developing and you need 
 to rely on Java (and Scala, Groovy, Kotlin)'s libraries!
 
 ## Using this plugin
@@ -32,7 +31,9 @@ buildscript {
 apply plugin: 'com.athaydes.ceylon'
 ```
 
-You can also config some properties in the `ceylon` block. For example:
+You can configure the behaviour of the plugin in the `ceylon` block.
+
+For example:
 
 ```groovy
 ceylon {
