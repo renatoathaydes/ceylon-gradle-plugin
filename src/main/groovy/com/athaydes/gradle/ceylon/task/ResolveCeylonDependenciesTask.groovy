@@ -29,9 +29,7 @@ class ResolveCeylonDependenciesTask {
 
         def moduleDeclaration = parse module.path, module.text
 
-        println "Detected the following module:\n$moduleDeclaration"
         def mavenDependencies = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
-        println "Maven deps:\n$mavenDependencies"
 
         mavenDependencies.each { Map dependency ->
             addMavenDependency dependency, project
