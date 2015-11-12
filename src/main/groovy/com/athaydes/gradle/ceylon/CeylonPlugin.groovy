@@ -52,7 +52,13 @@ class CeylonPlugin implements Plugin<Project> {
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylon' ) << {
-            CompileCeylonTask.run( project, config )
+            CompileCeylonTask.compileCeylon( project, config )
+        }
+        project.task(
+                dependsOn: 'compileCeylon',
+                description: 'Runs a Ceylon module.',
+                'runCeylon' ) << {
+            CompileCeylonTask.runCeylon( project, config )
         }
         project.getTasksByName( 'dependencies', false )*.dependsOn( 'resolveCeylonDependencies' )
     }

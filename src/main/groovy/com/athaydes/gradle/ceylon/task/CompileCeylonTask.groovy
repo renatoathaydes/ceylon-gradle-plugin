@@ -12,8 +12,16 @@ class CompileCeylonTask {
 
     static final Logger log = Logging.getLogger( CompileCeylonTask )
 
-    static void run( Project project, CeylonConfig config ) {
-        log.info "Compiling Ceylon code in project ${project.name}"
+    static void runCeylon( Project project, CeylonConfig config ) {
+        run 'run', project, config
+    }
+
+    static void compileCeylon( Project project, CeylonConfig config ) {
+        run 'compile', project, config
+    }
+
+    private static void run( String directive, Project project, CeylonConfig config ) {
+        log.info "Executing ceylon '$directive' in project ${project.name}"
         def ceylonFile = project.file( config.ceylonLocation )
         if ( ceylonFile.exists() ) {
             log.debug "Running executable ceylon: ${config.ceylonLocation}"
@@ -24,8 +32,8 @@ class CompileCeylonTask {
                 options += " --overrides ${overrides.absolutePath}"
             }
 
-            def command = "${ceylonFile.absolutePath} compile ${options} ${config.modules}"
-            log.warn( "Running $command" )
+            def command = "${ceylonFile.absolutePath} ${directive} ${options} ${config.modules}"
+            log.info( "Running command: $command" )
             def process = command.execute( [ ], project.file( '.' ) )
             delegateProcessTo process
         } else {
