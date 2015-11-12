@@ -2,9 +2,11 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import groovy.xml.MarkupBuilder
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
@@ -31,10 +33,37 @@ class GenerateOverridesFileTask {
 
         def dependencyTree = ResolveCeylonDependenciesTask.dependencyTreeOf( project )
 
-        def problems = dependencyTree.unresolvedDependencies +
-                ( DependencyTree.transitiveDependenciesOf( dependencyTree.resolvedDependencies ).findAll {
-                    it instanceof UnresolvedDependencyResult
-                } as Set<UnresolvedDependencyResult> )
+        checkForProblems dependencyTree
+
+        writeOverridesFile overridesFile, dependencyTree
+    }
+
+    private static writeOverridesFile( File overridesFile, DependencyTree dependencyTree ) {
+        overridesFile.withWriter { writer ->
+            def xml = new MarkupBuilder( writer )
+
+            xml.overrides {
+                dependencyTree.resolvedDependencies.each { dep ->
+                    def id = dep.selected.id
+                    if ( id instanceof ModuleComponentIdentifier ) {
+                        log.debug "Adding transitive dependencies for ${id.group}:${id.module}:${id.version}"
+                        addTransitiveDependencies dep, xml, id
+                    } else {
+                        log.warn( "Dependency will be ignored as it is of a type not supported " +
+                                "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
+                    }
+                }
+            }
+        }
+    }
+
+    private static void checkForProblems( DependencyTree dependencyTree ) {
+        def unresolvedTransDeps = ( DependencyTree
+                .transitiveDependenciesOf( dependencyTree.resolvedDependencies )
+                .findAll { it instanceof UnresolvedDependencyResult }
+                as Set<UnresolvedDependencyResult> )
+
+        def problems = dependencyTree.unresolvedDependencies + unresolvedTransDeps
 
         if ( problems ) {
             def problemDescription = problems.collect {
@@ -43,22 +72,37 @@ class GenerateOverridesFileTask {
             log.error "Unable to resolve the following dependencies:\n" + problemDescription
             throw new GradleException( 'Module has unresolved dependencies' )
         }
+    }
 
-        dependencyTree.resolvedDependencies.each { dep ->
-            def id = dep.selected.id
-            if ( id instanceof ModuleComponentIdentifier ) {
-                println "Dep name: ${id.group}:${id.module}:${id.version}"
-                println "    ${DependencyTree.transitiveDependenciesOf( dep )}"
-            } else {
-                log.warn( "Dependency will be ignored as it is of a type not supported " +
-                        "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
+    protected static void addTransitiveDependencies(
+            ResolvedDependencyResult dep,
+            MarkupBuilder xml,
+            ModuleComponentIdentifier id ) {
+        def transitiveDeps = DependencyTree.transitiveDependenciesOf( dep )
+        if ( transitiveDeps ) {
+            xml.artifact( coordinatesOf( id ) ) {
+                for ( trans in transitiveDeps ) {
+                    if ( trans instanceof ResolvedDependencyResult ) {
+                        def transId = trans.selected.id
+                        if ( transId instanceof ModuleComponentIdentifier ) {
+                            xml.add( coordinatesOf( transId, true ) )
+                        } else {
+                            log.warn "Ignoring transitive dependency as its selected ID type is not supported" +
+                                    " by the Ceylon plugin: ${transId.displayName}"
+                        }
+                    } else {
+                        log.warn "Ignoring transitive dependency as its type is not supported" +
+                                " by the Ceylon plugin: ${transId.displayName}"
+                    }
+                }
             }
         }
+    }
 
-        overridesFile.withWriter { writer ->
-            writer.println( '<overrides>' )
-            writer.println( '</overrides>' )
-        }
+    protected static Map coordinatesOf( ModuleComponentIdentifier id, boolean shared = false ) {
+        def result = [ groupId: id.group, artifactId: id.module, version: id.version ]
+        if ( shared ) result.shared = true
+        result
     }
 
 }
