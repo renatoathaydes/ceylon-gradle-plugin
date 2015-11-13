@@ -7,13 +7,21 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
 class GenerateOverridesFileTask {
 
     static final Logger log = Logging.getLogger( GenerateOverridesFileTask )
+
+    static List inputs( Project project, CeylonConfig config ) {
+        // this task's inputs are  exactly the same as the resolve task
+        ResolveCeylonDependenciesTask.inputs( project, config )
+    }
+
+    static List outputs( Project project, CeylonConfig config ) {
+        [ project.file( config.overrides ) ]
+    }
 
     static void run( Project project, CeylonConfig config ) {
         generateOverridesFile( project, project.file( config.overrides ) )
@@ -32,8 +40,6 @@ class GenerateOverridesFileTask {
         log.info( "Generating Ceylon overrides.xml file at {}", overridesFile )
 
         def dependencyTree = ResolveCeylonDependenciesTask.dependencyTreeOf( project )
-
-        checkForProblems dependencyTree
 
         writeOverridesFile overridesFile, dependencyTree
     }
@@ -57,23 +63,6 @@ class GenerateOverridesFileTask {
         }
     }
 
-    private static void checkForProblems( DependencyTree dependencyTree ) {
-        def unresolvedTransDeps = ( DependencyTree
-                .transitiveDependenciesOf( dependencyTree.resolvedDependencies )
-                .findAll { it instanceof UnresolvedDependencyResult }
-                as Set<UnresolvedDependencyResult> )
-
-        def problems = dependencyTree.unresolvedDependencies + unresolvedTransDeps
-
-        if ( problems ) {
-            def problemDescription = problems.collect {
-                "  * ${it.attempted.displayName} (${it.attemptedReason.description})"
-            }.join( '\n' )
-            log.error "Unable to resolve the following dependencies:\n" + problemDescription
-            throw new GradleException( 'Module has unresolved dependencies' )
-        }
-    }
-
     protected static void addTransitiveDependencies(
             ResolvedDependencyResult dep,
             MarkupBuilder xml,
@@ -92,7 +81,7 @@ class GenerateOverridesFileTask {
                         }
                     } else {
                         log.warn "Ignoring transitive dependency as its type is not supported" +
-                                " by the Ceylon plugin: ${transId.displayName}"
+                                " by the Ceylon plugin: ${trans.requested.displayName}"
                     }
                 }
             }
