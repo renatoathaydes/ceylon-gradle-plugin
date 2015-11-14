@@ -10,26 +10,24 @@ import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
+// This task does not declare any outputs because it must ALWAYS run,
+// as it adds the Ceylon dependencies to the project
 class ResolveCeylonDependenciesTask {
 
     static final Logger log = Logging.getLogger( ResolveCeylonDependenciesTask )
 
     static List inputs( Project project, CeylonConfig config ) {
         // lazily-evaluated elements
-        [ { moduleFile( config, project ) }, { project.buildFile } ]
-    }
-
-    static List outputs() {
-        [ ] // no outputs
+        [ { moduleFile( project, config ) }, { project.buildFile } ]
     }
 
     static void run( Project project, CeylonConfig config ) {
-        File module = moduleFile( config, project )
+        File module = moduleFile( project, config )
         log.info( "Parsing Ceylon module file at ${module.path}" )
 
         if ( !module.file ) {
             throw new GradleException( 'Ceylon module file does not exist.' +
-                    ' Please make sure that you set "sourceRoot" and "modules"' +
+                    ' Please make sure that you set "sourceRoot" and "module"' +
                     ' correctly in the "ceylon" configuration.' )
         }
 
@@ -46,13 +44,22 @@ class ResolveCeylonDependenciesTask {
         log.info( 'No dependency problems found!' )
     }
 
-    private static File moduleFile( CeylonConfig config, Project project ) {
-        def moduleNameParts = config.modules.split( /\./ ).toList()
-        def modulePath = ( [ config.sourceRoot ] +
-                moduleNameParts +
-                [ 'module.ceylon' ] ).join( '/' )
+    static File moduleFile( Project project, CeylonConfig config ) {
+        def moduleNameParts = config.module.split( /\./ ).toList()
 
-        project.file( modulePath )
+        List locations = [ ]
+        for ( root in config.sourceRoots ) {
+            def modulePath = ( [ root ] +
+                    moduleNameParts +
+                    [ 'module.ceylon' ] ).join( '/' )
+
+            locations << modulePath
+            def module = project.file( modulePath )
+            if ( module.exists() ) return module
+        }
+
+        throw new GradleException( "Module file cannot be located. " +
+                "Looked at the following locations: $locations" )
     }
 
     @Memoized

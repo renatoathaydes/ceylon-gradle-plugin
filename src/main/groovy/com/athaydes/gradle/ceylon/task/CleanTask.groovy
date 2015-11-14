@@ -10,8 +10,7 @@ class CleanTask {
     static final Logger log = Logging.getLogger( CleanTask )
 
     static List inputs( Project project, CeylonConfig config ) {
-        def result = GenerateOverridesFileTask.outputs( project, config ) +
-                ResolveCeylonDependenciesTask.outputs()
+        def result = GenerateOverridesFileTask.outputs( project, config )
 
         log.info( "The clean task has the following inputs: $result" )
 

@@ -14,6 +14,14 @@ class CompileCeylonTask {
 
     static final Logger log = Logging.getLogger( CompileCeylonTask )
 
+    static List inputs( Project project, CeylonConfig config ) {
+        [ { ResolveCeylonDependenciesTask.moduleFile( project, config ).parentFile } ]
+    }
+
+    static List outputs( Project project, CeylonConfig config ) {
+        [ { project.file( config.output ) } ]
+    }
+
     static void runCeylon( Project project, CeylonConfig config ) {
         run 'run', project, config
     }
@@ -26,13 +34,9 @@ class CompileCeylonTask {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
         CeylonRunner.withCeylon( project, config ) { File ceylon ->
-            def options = ''
-            def overrides = project.file( config.overrides )
-            if ( overrides.exists() ) {
-                options += " --overrides ${overrides.absolutePath}"
-            }
+            def options = getOptions( ceylonDirective, project, config )
 
-            def command = "${ceylon.absolutePath} ${ceylonDirective} ${options} ${config.modules}"
+            def command = "${ceylon.absolutePath} ${ceylonDirective} ${options} ${config.module}"
             log.info( "Running command: $command" )
             def process = command.execute( [ ], project.file( '.' ) )
 
@@ -42,4 +46,43 @@ class CompileCeylonTask {
         }
     }
 
+    private static String getOptions( String ceylonDirective, Project project, CeylonConfig config ) {
+        def options = [ ]
+        def overrides = project.file( config.overrides )
+        if ( overrides.exists() ) {
+            options << "--overrides ${overrides.absolutePath}"
+        } else {
+            log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
+        }
+
+        if ( config.flatClassPath ) {
+            options << '--flat-classpath'
+        }
+
+        switch ( ceylonDirective ) {
+            case 'compile':
+                options += compileOptions( project, config )
+                break
+            case 'run':
+                options += runOptions( project, config )
+        }
+
+        return options.join( ' ' )
+    }
+
+    static List compileOptions( Project project, CeylonConfig config ) {
+        def options = [ ]
+
+        def output = project.file( config.output )
+        options << "--out ${output.absolutePath}"
+
+        config.sourceRoots.each { options << "--source $it" }
+        config.resourceRoots.each { options << "--resource $it" }
+        return options
+    }
+
+    static List runOptions( Project project, CeylonConfig config ) {
+        // no specific run options yet
+        [ ]
+    }
 }

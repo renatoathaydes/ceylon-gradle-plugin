@@ -41,7 +41,6 @@ class CeylonPlugin implements Plugin<Project> {
         }
 
         resolveDepsTask.inputs.files ResolveCeylonDependenciesTask.inputs( project, config )
-        resolveDepsTask.outputs.files( ResolveCeylonDependenciesTask.outputs() )
 
         Task generateOverridesFile = project.task(
                 dependsOn: 'resolveCeylonDependencies',
@@ -62,19 +61,24 @@ class CeylonPlugin implements Plugin<Project> {
                 'importJars' ) << {
             ImportJarsTask.run( project, config )
         }
-        project.task(
+        Task compileTask = project.task(
                 dependsOn: [ 'generateOverridesFile', 'importJars' ],
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylon' ) << {
             CompileCeylonTask.compileCeylon( project, config )
         }
+
+        compileTask.inputs.files( CompileCeylonTask.inputs( project, config ) )
+        compileTask.outputs.files( CompileCeylonTask.outputs( project, config ) )
+
         project.task(
                 dependsOn: 'compileCeylon',
                 description: 'Runs a Ceylon module.',
                 'runCeylon' ) << {
             CompileCeylonTask.runCeylon( project, config )
         }
+
         def cleanTask = project.task(
                 type: Delete,
                 description: 'Removes the output of all tasks of the Ceylon plugin.',
