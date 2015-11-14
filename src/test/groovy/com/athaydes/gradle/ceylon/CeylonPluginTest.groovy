@@ -14,6 +14,7 @@ class CeylonPluginTest {
 
         project.apply plugin: 'com.athaydes.ceylon'
 
+        assert project.tasks.cleanCeylon
         assert project.tasks.compileCeylon
         assert project.tasks.runCeylon
         assert project.tasks.resolveCeylonDependencies

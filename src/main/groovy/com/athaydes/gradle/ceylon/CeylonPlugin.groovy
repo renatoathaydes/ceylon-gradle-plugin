@@ -1,5 +1,6 @@
 package com.athaydes.gradle.ceylon
 
+import com.athaydes.gradle.ceylon.task.CleanTask
 import com.athaydes.gradle.ceylon.task.CompileCeylonTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
 import com.athaydes.gradle.ceylon.task.ImportJarsTask
@@ -9,6 +10,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.Delete
 
 class CeylonPlugin implements Plugin<Project> {
 
@@ -73,6 +75,19 @@ class CeylonPlugin implements Plugin<Project> {
                 'runCeylon' ) << {
             CompileCeylonTask.runCeylon( project, config )
         }
+        def cleanTask = project.task(
+                type: Delete,
+                description: 'Removes the output of all tasks of the Ceylon plugin.',
+                'cleanCeylon' ) as Delete
+
+        cleanTask.delete( CleanTask.inputs( project, config ) )
+
+        project.tasks.withType( Delete ) { clean ->
+            if ( clean != cleanTask ) {
+                clean.dependsOn cleanTask
+            }
+        }
+
         project.getTasksByName( 'dependencies', false )*.dependsOn( 'resolveCeylonDependencies' )
     }
 
