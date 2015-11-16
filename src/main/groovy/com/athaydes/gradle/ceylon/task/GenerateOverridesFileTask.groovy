@@ -20,10 +20,14 @@ class GenerateOverridesFileTask {
     }
 
     static List outputs( Project project, CeylonConfig config ) {
-        [ project.file( config.overrides ) ]
+        // lazily-evaluated elements
+        [ { project.file( config.overrides ) } ]
     }
 
     static void run( Project project, CeylonConfig config ) {
+        // run this task manually as Gradle wouldn't run it even when needed
+        ResolveCeylonDependenciesTask.run( project, config )
+
         generateOverridesFile( project, project.file( config.overrides ) )
     }
 

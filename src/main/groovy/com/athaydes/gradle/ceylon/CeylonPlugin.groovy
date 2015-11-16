@@ -41,6 +41,7 @@ class CeylonPlugin implements Plugin<Project> {
         }
 
         resolveDepsTask.inputs.files ResolveCeylonDependenciesTask.inputs( project, config )
+        resolveDepsTask.outputs.files( ResolveCeylonDependenciesTask.outputs( project, config ) )
 
         Task generateOverridesFile = project.task(
                 dependsOn: 'resolveCeylonDependencies',
@@ -55,12 +56,16 @@ class CeylonPlugin implements Plugin<Project> {
         generateOverridesFile.inputs.files GenerateOverridesFileTask.inputs( project, config )
         generateOverridesFile.outputs.files GenerateOverridesFileTask.outputs( project, config )
 
-        project.task(
+        Task importJarsTask = project.task(
                 dependsOn: 'resolveCeylonDependencies',
-                description: 'Install transitive dependencies into the Ceylon local repository if needed.',
+                description: 'Import transitive dependencies into the Ceylon local repository if needed.',
                 'importJars' ) << {
             ImportJarsTask.run( project, config )
         }
+
+        importJarsTask.inputs.files( ImportJarsTask.inputs( project, config ) )
+        importJarsTask.outputs.files( ImportJarsTask.outputs( project, config ) )
+
         Task compileTask = project.task(
                 dependsOn: [ 'generateOverridesFile', 'importJars' ],
                 description: 'Compiles Ceylon and Java source code and directly' +
@@ -92,7 +97,9 @@ class CeylonPlugin implements Plugin<Project> {
             }
         }
 
-        project.getTasksByName( 'dependencies', false )*.dependsOn( 'resolveCeylonDependencies' )
+        project.getTasksByName( 'dependencies', false )*.doFirst {
+            ResolveCeylonDependenciesTask.run( project, config )
+        }
     }
 
 }

@@ -10,8 +10,6 @@ import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
-// This task does not declare any outputs because it must ALWAYS run,
-// as it adds the Ceylon dependencies to the project
 class ResolveCeylonDependenciesTask {
 
     static final Logger log = Logging.getLogger( ResolveCeylonDependenciesTask )
@@ -21,7 +19,15 @@ class ResolveCeylonDependenciesTask {
         [ { moduleFile( project, config ) }, { project.buildFile } ]
     }
 
-    static void run( Project project, CeylonConfig config ) {
+    static List outputs( Project project, CeylonConfig config ) {
+        // no outputs
+        [ ]
+    }
+
+    @Memoized
+    // so it runs only once
+    static def run( Project project, CeylonConfig config ) {
+        println "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
         File module = moduleFile( project, config )
         log.info( "Parsing Ceylon module file at ${module.path}" )
 

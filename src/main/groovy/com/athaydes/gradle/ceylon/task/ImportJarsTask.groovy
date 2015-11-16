@@ -11,7 +11,19 @@ class ImportJarsTask {
 
     static final Logger log = Logging.getLogger( ImportJarsTask )
 
+    static List inputs( Project project, CeylonConfig config ) {
+        ResolveCeylonDependenciesTask.inputs( project, config )
+    }
+
+    static List outputs( Project project, CeylonConfig config ) {
+        // no outputs
+        [ ]
+    }
+
     static void run( Project project, CeylonConfig config ) {
+        // run this task manually as Gradle wouldn't run it even when needed
+        ResolveCeylonDependenciesTask.run( project, config )
+
         log.debug "Importing jars"
 
         def dependencyTree = ResolveCeylonDependenciesTask.dependencyTreeOf( project )
