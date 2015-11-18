@@ -18,8 +18,7 @@ class ImportJarsTask {
     }
 
     static List outputs( Project project, CeylonConfig config ) {
-        // no outputs
-        [ ]
+        [ { project.file( config.output ) } ]
     }
 
     static void run( Project project, CeylonConfig config ) {
@@ -64,7 +63,7 @@ class ImportJarsTask {
 
             if ( jarFile?.exists() ) {
                 def command = "${ceylon.absolutePath} import-jar --force " +
-                        "--out=\"${repo.absolutePath}\" $module $jarFile"
+                        "--out=${repo.absolutePath} $module ${jarFile.absolutePath}"
 
                 log.info "Running command: $command"
                 def process = command.execute( [ ], project.file( '.' ) )
