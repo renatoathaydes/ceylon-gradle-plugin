@@ -63,7 +63,8 @@ class ImportJarsTask {
             }?.file
 
             if ( jarFile?.exists() ) {
-                def command = "${ceylon.absolutePath} import-jar --out=\"${repo.absolutePath}\" $module $jarFile"
+                def command = "${ceylon.absolutePath} import-jar --force " +
+                        "--out=\"${repo.absolutePath}\" $module $jarFile"
 
                 log.info "Running command: $command"
                 def process = command.execute( [ ], project.file( '.' ) )

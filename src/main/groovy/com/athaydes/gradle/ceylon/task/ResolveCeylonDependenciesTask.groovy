@@ -27,7 +27,6 @@ class ResolveCeylonDependenciesTask {
     @Memoized
     // so it runs only once
     static def run( Project project, CeylonConfig config ) {
-        println "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
         File module = moduleFile( project, config )
         log.info( "Parsing Ceylon module file at ${module.path}" )
 
