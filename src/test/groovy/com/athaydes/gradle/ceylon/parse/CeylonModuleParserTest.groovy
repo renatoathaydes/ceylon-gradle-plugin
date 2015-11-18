@@ -238,6 +238,7 @@ class CeylonModuleParserTest {
         |\t\timport java.base "8";
         |\t\t//import "org.apache.logging.log4j:log4j-api" "2.4.1";
         |\t\timport "org.apache.logging.log4j:log4j-core" "2.4.1";
+        |\t\timport "org.spockframework:spock-core" "1.0-groovy-2.4";
         |}""".stripMargin()
 
         assert result
@@ -246,6 +247,7 @@ class CeylonModuleParserTest {
         assert result.imports == [
                 [ name: 'java.base', version: '8' ],
                 [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1' ],
+                [ name: 'org.spockframework:spock-core', version: '1.0-groovy-2.4' ],
         ]
     }
 
