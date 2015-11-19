@@ -237,7 +237,7 @@ class CeylonModuleParserTest {
         |module com.athaydes.maven "1.0.0" {
         |\t\timport java.base "8";
         |\t\t//import "org.apache.logging.log4j:log4j-api" "2.4.1";
-        |\t\timport "org.apache.logging.log4j:log4j-core" "2.4.1";
+        |\t\tshared import "org.apache.logging.log4j:log4j-core" "2.4.1";
         |\t\timport "org.spockframework:spock-core" "1.0-groovy-2.4";
         |}""".stripMargin()
 
@@ -246,7 +246,7 @@ class CeylonModuleParserTest {
         assert result.version == '1.0.0'
         assert result.imports == [
                 [ name: 'java.base', version: '8' ],
-                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1' ],
+                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1', shared: true ],
                 [ name: 'org.spockframework:spock-core', version: '1.0-groovy-2.4' ],
         ]
     }

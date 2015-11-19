@@ -195,7 +195,7 @@ class CeylonModuleParser {
                 def imports = getImports( result )
                 if ( !imports.empty && !imports.last().name ) { // newest entry has no name yet
                     assert imports.last().containsKey( 'shared' )
-                    imports.last().name = word
+                    imports.last().name = name
                 } else {
                     imports << [ name: name ]
                 }
