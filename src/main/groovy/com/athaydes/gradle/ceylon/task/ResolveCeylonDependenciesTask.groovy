@@ -37,6 +37,8 @@ class ResolveCeylonDependenciesTask {
             addMavenDependency dependency, project
         }
 
+        project.configurations*.resolve()
+
         checkForProblems dependencyTreeOf( project )
 
         log.info( 'No dependency problems found!' )
@@ -67,6 +69,7 @@ class ResolveCeylonDependenciesTask {
     }
 
     private static void addMavenDependency( Map dependency, Project project ) {
+        println "Adding dep: ${dependency.name}:${dependency.version}"
         project.dependencies.add( 'ceylonCompile', "${dependency.name}:${dependency.version}" )
     }
 
