@@ -13,18 +13,19 @@ class ImportJarsTask {
 
     static final Logger log = Logging.getLogger( ImportJarsTask )
 
-    static List inputs( Project project, CeylonConfig config ) {
+    static def inputs( Project project, CeylonConfig config ) {
         ResolveCeylonDependenciesTask.inputs( project, config )
     }
 
-    static List outputs( Project project, CeylonConfig config ) {
-        [ { project.file( config.output ) } ]
+    static def outputs( Project project, CeylonConfig config ) {
+        { ->
+            allArtifactsIn( project ).collect { artifact ->
+                artifactLocationInRepo( artifact, project.file( config.output ) )
+            }
+        }
     }
 
     static void run( Project project, CeylonConfig config ) {
-        // run this task manually as Gradle wouldn't run it even when needed
-        ResolveCeylonDependenciesTask.run( project, config )
-
         log.debug "Importing jars"
 
         def repo = project.file( config.output )
@@ -34,24 +35,36 @@ class ImportJarsTask {
         }
 
         CeylonRunner.withCeylon( project, config ) { File ceylon ->
-            project.configurations.ceylonCompile
-                    .resolvedConfiguration
-                    .resolvedArtifacts.each { artifact ->
+            allArtifactsIn( project ).each { artifact ->
                 importDependency ceylon, repo, artifact, project
             }
         }
     }
 
-    static void importDependency( File ceylon,
-                                  File repo,
-                                  ResolvedArtifact artifact,
-                                  Project project ) {
+    private static Set<ResolvedArtifact> allArtifactsIn( Project project ) {
+        project.configurations.ceylonCompile
+                .resolvedConfiguration
+                .resolvedArtifacts
+    }
+
+    private static void importDependency( File ceylon,
+                                          File repo,
+                                          ResolvedArtifact artifact,
+                                          Project project ) {
         log.debug( "Will try to install ${artifact} into the Ceylon repository" )
 
         def jarFile = artifact.file
         def artifactId = artifact.id
 
         if ( artifactId instanceof ModuleComponentArtifactIdentifier ) {
+            def expectedInstallation = artifactLocationInRepo( artifact, repo )
+
+            if ( expectedInstallation.exists() ) {
+                log.info( "Skipping installation of $artifact as it seems to be " +
+                        "already installed at $expectedInstallation" )
+                return
+            }
+
             def id = artifactId.componentIdentifier
             def module = "${id.group}:${id.module}/${id.version}"
 
@@ -63,12 +76,36 @@ class ImportJarsTask {
                 def process = command.execute( [ ], project.file( '.' ) )
 
                 CeylonRunner.consumeOutputOf process
+
+                if ( !expectedInstallation.exists() ) {
+                    log.warn( "Ceylon does not seem to have installed the artifact '${artifact.id}'" +
+                            " in the expected location: $expectedInstallation" )
+                }
             } else {
                 throw new GradleException( "Dependency ${module} could not be installed in the Ceylon Repository" +
                         " because its jarFile could not be located: ${jarFile}" )
             }
         } else {
             log.warn( "Artifact being ignored as it is not a module artifact: ${artifact}" )
+        }
+    }
+
+    private static File artifactLocationInRepo(
+            ResolvedArtifact artifact, File repo ) {
+        def artifactId = artifact.id
+        if ( artifactId instanceof ModuleComponentArtifactIdentifier ) {
+            def id = artifactId.componentIdentifier
+            def group = id.group
+            def groupPath = group.replace( '.', '/' )
+            def name = id.module
+            def version = id.version
+            def ext = artifact.extension
+
+            // use the default Ceylon pattern
+            def location = "$groupPath:$name/$version/$group:${name}-${version}.$ext"
+            return new File( repo, location )
+        } else {
+            return null
         }
     }
 
