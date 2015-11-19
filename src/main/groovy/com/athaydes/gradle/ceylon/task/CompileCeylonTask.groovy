@@ -15,7 +15,8 @@ class CompileCeylonTask {
     static final Logger log = Logging.getLogger( CompileCeylonTask )
 
     static List inputs( Project project, CeylonConfig config ) {
-        [ { ResolveCeylonDependenciesTask.moduleFile( project, config ).parentFile },
+        [ { project.files( config.sourceRoots ) },
+          { project.files( config.resourceRoots ) },
           GenerateOverridesFileTask.outputs( project, config ) ].flatten()
     }
 
