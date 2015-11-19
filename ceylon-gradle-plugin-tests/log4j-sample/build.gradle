@@ -1,0 +1,13 @@
+apply plugin: 'com.athaydes.ceylon'
+
+group 'com.athaydes.gradle.ceylon'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+}
+
+ceylon {
+    module = "com.athaydes.maven"
+    flatClassPath = true
+}
