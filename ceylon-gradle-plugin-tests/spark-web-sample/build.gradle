@@ -1,0 +1,14 @@
+apply plugin: 'com.athaydes.ceylon'
+
+group 'com.athaydes.gradle.ceylon'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+ceylon {
+    module = "com.athaydes.sparkweb"
+    flatClassPath = true
+}
