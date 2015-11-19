@@ -14,18 +14,11 @@ class ResolveCeylonDependenciesTask {
 
     static final Logger log = Logging.getLogger( ResolveCeylonDependenciesTask )
 
-    static List inputs( Project project, CeylonConfig config ) {
+    static def inputs( Project project, CeylonConfig config ) {
         // lazily-evaluated elements
         [ { moduleFile( project, config ) }, { project.buildFile } ]
     }
 
-    static List outputs( Project project, CeylonConfig config ) {
-        // no outputs
-        [ ]
-    }
-
-    @Memoized
-    // so it runs only once
     static def run( Project project, CeylonConfig config ) {
         File module = moduleFile( project, config )
         log.info( "Parsing Ceylon module file at ${module.path}" )

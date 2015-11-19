@@ -41,7 +41,6 @@ class CeylonPlugin implements Plugin<Project> {
         }
 
         resolveDepsTask.inputs.files ResolveCeylonDependenciesTask.inputs( project, config )
-        resolveDepsTask.outputs.files( ResolveCeylonDependenciesTask.outputs( project, config ) )
 
         Task generateOverridesFile = project.task(
                 dependsOn: 'resolveCeylonDependencies',
@@ -97,9 +96,7 @@ class CeylonPlugin implements Plugin<Project> {
             }
         }
 
-        project.getTasksByName( 'dependencies', false )*.doFirst {
-            ResolveCeylonDependenciesTask.run( project, config )
-        }
+        project.getTasksByName( 'dependencies', false )*.dependsOn resolveDepsTask
     }
 
 }

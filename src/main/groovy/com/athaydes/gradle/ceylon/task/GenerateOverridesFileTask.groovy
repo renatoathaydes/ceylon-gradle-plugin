@@ -25,9 +25,6 @@ class GenerateOverridesFileTask {
     }
 
     static void run( Project project, CeylonConfig config ) {
-        // run this task manually as Gradle wouldn't run it even when needed
-        ResolveCeylonDependenciesTask.run( project, config )
-
         generateOverridesFile( project, project.file( config.overrides ) )
     }
 
