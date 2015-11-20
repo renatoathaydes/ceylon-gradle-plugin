@@ -40,7 +40,8 @@ class GenerateOverridesFileTask {
 
         log.info( "Generating Ceylon overrides.xml file at {}", overridesFile )
 
-        def dependencyTree = ResolveCeylonDependenciesTask.dependencyTreeOf( project )
+        def dependencyTree = project.extensions
+                .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
         writeOverridesFile overridesFile, dependencyTree
     }
@@ -53,8 +54,10 @@ class GenerateOverridesFileTask {
                 dependencyTree.resolvedDependencies.each { dep ->
                     def id = dep.selected.id
                     if ( id instanceof ModuleComponentIdentifier ) {
-                        log.debug "Adding transitive dependencies for ${id.group}:${id.module}:${id.version}"
-                        addTransitiveDependencies dep, xml, id
+                        def shared = dependencyTree.isShared( id.group, id.module, id.version )
+                        log.info "Adding transitive dependencies for ${id.group}:${id.module}:${id.version}" +
+                                " - shared? $shared"
+                        addTransitiveDependencies dep, xml, id, shared
                     } else {
                         log.warn( "Dependency will be ignored as it is of a type not supported " +
                                 "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
@@ -67,10 +70,11 @@ class GenerateOverridesFileTask {
     protected static void addTransitiveDependencies(
             ResolvedDependencyResult dep,
             MarkupBuilder xml,
-            ModuleComponentIdentifier id ) {
+            ModuleComponentIdentifier id,
+            boolean shared ) {
         def transitiveDeps = DependencyTree.transitiveDependenciesOf( dep )
         if ( transitiveDeps ) {
-            xml.artifact( coordinatesOf( id ) ) {
+            xml.artifact( coordinatesOf( id, shared ) ) {
                 for ( trans in transitiveDeps ) {
                     if ( trans instanceof ResolvedDependencyResult ) {
                         def transId = trans.selected.id
@@ -89,7 +93,7 @@ class GenerateOverridesFileTask {
         }
     }
 
-    protected static Map coordinatesOf( ModuleComponentIdentifier id, boolean shared = false ) {
+    protected static Map coordinatesOf( ModuleComponentIdentifier id, boolean shared ) {
         def result = [ groupId: id.group, artifactId: id.module, version: id.version ]
         if ( shared ) result.shared = true
         result

@@ -11,9 +11,11 @@ import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 class DependencyTree {
 
     private final ResolvedComponentResult node
+    private final Collection<Map> imports
 
-    DependencyTree( ResolvedComponentResult node ) {
+    DependencyTree( ResolvedComponentResult node, Collection<Map> imports ) {
         this.node = node
+        this.imports = imports
     }
 
     Set<ResolvedDependencyResult> getResolvedDependencies() {
@@ -26,6 +28,13 @@ class DependencyTree {
         node.dependencies.findAll {
             it instanceof UnresolvedDependencyResult
         } as Set<UnresolvedDependencyResult>
+    }
+
+    boolean isShared( String group, String name, String version ) {
+        def dependency = imports.find {
+            it.name == "$group:$name" && it.version == version
+        }
+        return dependency?.shared
     }
 
     static Set<DependencyResult> transitiveDependenciesOf(
