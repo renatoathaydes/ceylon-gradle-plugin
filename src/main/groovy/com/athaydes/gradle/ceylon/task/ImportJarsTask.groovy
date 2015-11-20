@@ -34,7 +34,7 @@ class ImportJarsTask {
             throw new GradleException( "Output repository does not exist and cannot be created ${repo.absolutePath}." )
         }
 
-        CeylonRunner.withCeylon( project, config ) { File ceylon ->
+        CeylonRunner.withCeylon( config ) { String ceylon ->
             allArtifactsIn( project ).each { artifact ->
                 importDependency ceylon, repo, artifact, project
             }
@@ -47,7 +47,7 @@ class ImportJarsTask {
                 .resolvedArtifacts
     }
 
-    private static void importDependency( File ceylon,
+    private static void importDependency( String ceylon,
                                           File repo,
                                           ResolvedArtifact artifact,
                                           Project project ) {
@@ -69,7 +69,7 @@ class ImportJarsTask {
             def module = "${id.group}:${id.module}/${id.version}"
 
             if ( jarFile?.exists() ) {
-                def command = "${ceylon.absolutePath} import-jar --force " +
+                def command = "${ceylon} import-jar --force " +
                         "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath}"
 
                 log.info "Running command: $command"

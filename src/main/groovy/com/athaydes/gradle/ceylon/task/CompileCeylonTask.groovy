@@ -35,10 +35,10 @@ class CompileCeylonTask {
     private static void run( String ceylonDirective, Project project, CeylonConfig config ) {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
-        CeylonRunner.withCeylon( project, config ) { File ceylon ->
+        CeylonRunner.withCeylon( config ) { String ceylon ->
             def options = getOptions( ceylonDirective, project, config )
 
-            def command = "${ceylon.absolutePath} ${ceylonDirective} ${options} ${config.module}"
+            def command = "${ceylon} ${ceylonDirective} ${options} ${config.module}"
             log.info( "Running command: $command" )
             def process = command.execute( [ ], project.file( '.' ) )
 

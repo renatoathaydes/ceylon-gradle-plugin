@@ -2,7 +2,6 @@ package com.athaydes.gradle.ceylon.util
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import org.gradle.api.GradleException
-import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
@@ -10,20 +9,25 @@ class CeylonRunner {
 
     static final Logger log = Logging.getLogger( CeylonRunner )
 
-    static void withCeylon( Project project, CeylonConfig config, Closure<?> ceylonConsumer ) {
-        def ceylonFile = project.file( config.ceylonLocation )
-        if ( ceylonFile.exists() ) {
-            log.debug "Running Ceylon executable: ${ceylonFile.absolutePath}"
-            try {
-                ceylonConsumer ceylonFile
-            } catch ( GradleException e ) {
-                throw e
-            } catch ( e ) {
+    static void withCeylon( CeylonConfig config, Closure<?> ceylonConsumer ) {
+        String ceylon = CeylonToolLocator.findCeylon( config.ceylonLocation )
+        log.debug "Running Ceylon executable: ${ceylon}"
+        try {
+            ceylonConsumer ceylon
+        } catch ( GradleException e ) {
+            throw e
+        } catch ( IOException e ) {
+            def messages = [ e.message, e.cause?.message ]
+            if ( messages.any { it ==~ /.*Cannot run.*"ceylon".*/ } ) {
+                print CeylonToolLocator.error()
                 throw new GradleException(
-                        'Problem running the ceylon command. Run with --stacktrace for the cause.', e )
+                        'Ceylon could not be found! See suggestions above to fix the problem.' )
             }
-        } else {
-            throw new GradleException( 'Unable to locate Ceylon. Please set ceylonLocation in the ceylon configuration' )
+            throw new GradleException(
+                    'Problem running the ceylon command. Run with --stacktrace for the cause.', e )
+        } catch ( e ) {
+            throw new GradleException(
+                    'Problem running the ceylon command. Run with --stacktrace for the cause.', e )
         }
     }
 
