@@ -28,14 +28,6 @@ class DependencyTree {
         } as Set<UnresolvedDependencyResult>
     }
 
-    Set<ResolvedDependencyResult> getAllResolvedTransitiveDependencies() {
-        this.resolvedDependencies.collectMany {
-            [ it ] + transitiveDependenciesOf( it ).findAll {
-                it instanceof ResolvedDependencyResult
-            }
-        } as Set<ResolvedDependencyResult>
-    }
-
     static Set<DependencyResult> transitiveDependenciesOf(
             ResolvedDependencyResult dependencyResult ) {
         dependencyResult.selected.dependencies.collectMany { it ->
