@@ -87,7 +87,9 @@ Most of the configuration of this plugin is done inside the `ceylon` block.
 
 The following properties can be set in the `ceylon` block:
 
-* `ceylonLocation`: (optional) path to the ceylon executable.
+* `ceylonLocation`: (optional) path to the ceylon executable. Set the `CEYLON_HOME` environment variable instead
+  to make the build more portable, or do nothing if you use [SDKMAN!](http://sdkman.io/)
+  as in that case, the Ceylon location will be found automatically.
 * `sourceRoots`: (default: `['source']`) List of directories where the Ceylon source code is located.
 * `resourceRoots`: (default: `['resource']`) List of directories where resources are located.
 * `output`: (default: `modules`) specifies the output module repository.
