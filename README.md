@@ -54,6 +54,7 @@ The Ceylon-Gradle Plugin adds the following tasks to your project:
 * importJars - imports transitive dependencies into the `output` repository.
 * compileCeylon - compiles the Ceylon module.
 * runCeylon - runs the Ceylon module
+* testCeylon - runs the tests in the test module
 
 Examples:
 
@@ -91,6 +92,7 @@ The following properties can be set in the `ceylon` block:
 * `resourceRoots`: (default: `['resource']`) List of directories where resources are located.
 * `output`: (default: `modules`) specifies the output module repository.
 * `module`: (**mandatory**) name of the Ceylon module.
+* `testModule`: (default: same value as `module`): name of the Ceylon test module.
 * `moduleExclusions`: (default: `[]`) name of the modules to remove from the compilation and runtime.
 * `overrides`: (default: `'auto-generated/overrides.xml'`) location to store the automatically-generated overrides.xml file.
 * `flatClassPath`: (default: `false`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
@@ -100,6 +102,7 @@ An example configuration (using most options above) might look like this:
 ```groovy
 ceylon {
     module = "com.acme.awesome"
+    testModule = "test.com.acme.awesome"
     flatClassPath = true
     sourceRoots = ['source', 'src/main/ceylon']
     resourceRoots = ['resource', 'src/main/resources']
