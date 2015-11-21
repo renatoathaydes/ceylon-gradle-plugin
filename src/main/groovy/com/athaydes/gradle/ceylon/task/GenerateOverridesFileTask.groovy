@@ -54,7 +54,7 @@ class GenerateOverridesFileTask {
                 dependencyTree.resolvedDependencies.each { dep ->
                     def id = dep.selected.id
                     if ( id instanceof ModuleComponentIdentifier ) {
-                        def shared = dependencyTree.isShared( id.group, id.module, id.version )
+                        def shared = dependencyTree.isShared( id )
                         log.info "Adding transitive dependencies for ${id.group}:${id.module}:${id.version}" +
                                 " - shared? $shared"
                         addTransitiveDependencies dep, xml, id, shared

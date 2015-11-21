@@ -1,5 +1,6 @@
 package com.athaydes.gradle.ceylon.util
 
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -13,9 +14,14 @@ class DependencyTree {
     private final ResolvedComponentResult node
     private final Collection<Map> imports
 
-    DependencyTree( ResolvedComponentResult node, Collection<Map> imports ) {
+    final String moduleName
+    final String moduleVersion
+
+    DependencyTree( ResolvedComponentResult node, Map moduleDeclaration ) {
         this.node = node
-        this.imports = imports
+        this.imports = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
+        this.moduleName = moduleDeclaration.moduleName
+        this.moduleVersion = moduleDeclaration.version
     }
 
     Set<ResolvedDependencyResult> getResolvedDependencies() {
@@ -30,11 +36,15 @@ class DependencyTree {
         } as Set<UnresolvedDependencyResult>
     }
 
-    boolean isShared( String group, String name, String version ) {
-        def dependency = imports.find {
-            it.name == "$group:$name" && it.version == version
-        }
+    boolean isShared( ModuleComponentIdentifier id ) {
+        def dependency = moduleDeclaration( id )
         return dependency?.shared
+    }
+
+    private Map moduleDeclaration( ModuleComponentIdentifier id ) {
+        imports.find {
+            it.name == "${id.group}:${id.module}" && it.version == id.version
+        }
     }
 
     static Set<DependencyResult> transitiveDependenciesOf(

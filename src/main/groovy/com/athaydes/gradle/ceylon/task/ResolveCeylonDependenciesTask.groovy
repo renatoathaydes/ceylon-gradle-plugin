@@ -33,13 +33,25 @@ class ResolveCeylonDependenciesTask {
 
         def mavenDependencies = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
 
+        def existingDependencies = project.configurations.getByName( 'ceylonCompile' ).dependencies.collect {
+            "${it.group}:${it.name}:${it.version}"
+        }
+
+        log.debug "Project existing dependencies: {}", existingDependencies
+
         mavenDependencies.each { Map dependency ->
-            addMavenDependency dependency, project
+            if ( !existingDependencies.contains(
+                    "${dependency.name}:${dependency.version}" ) ) {
+                addMavenDependency dependency, project
+            } else {
+                log.info "Not adding transitive dependencies of module " +
+                        "$dependency as it already existed in the project"
+            }
         }
 
         project.configurations*.resolve()
 
-        def dependencyTree = dependencyTreeOf( project, mavenDependencies )
+        def dependencyTree = dependencyTreeOf( project, moduleDeclaration )
 
         checkForProblems dependencyTree
 
@@ -66,9 +78,9 @@ class ResolveCeylonDependenciesTask {
                 "Looked at the following locations: $locations" )
     }
 
-    private static DependencyTree dependencyTreeOf( Project project, Collection<Map> imports ) {
+    private static DependencyTree dependencyTreeOf( Project project, Map moduleDeclaration ) {
         new DependencyTree( project.configurations.getByName( 'ceylonCompile' )
-                .incoming.resolutionResult.root, imports )
+                .incoming.resolutionResult.root, moduleDeclaration )
     }
 
     private static void addMavenDependency( Map dependency, Project project ) {
