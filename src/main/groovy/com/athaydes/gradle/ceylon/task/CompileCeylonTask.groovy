@@ -38,7 +38,9 @@ class CompileCeylonTask {
     }
 
     static void testCeylon( Project project, CeylonConfig config ) {
-        run 'compile', config.testModule, project, config
+        if ( config.module != config.testModule ) {
+            run 'compile', config.testModule, project, config
+        }
         run 'test', config.testModule, project, config
     }
 

@@ -14,4 +14,9 @@ class CeylonConfig {
     Boolean flatClassPath = false
 
     String testModule = ''
+
+    String getTestModule() {
+        this.@testModule ?: module
+    }
+
 }
