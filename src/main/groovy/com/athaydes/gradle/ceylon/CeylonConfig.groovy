@@ -9,6 +9,7 @@ class CeylonConfig {
     List resourceRoots = [ 'resource' ]
     String output = 'modules'
     String module = ''
+    List moduleExclusions = [ ]
     String overrides = 'auto-generated/overrides.xml'
     Boolean flatClassPath = false
 }

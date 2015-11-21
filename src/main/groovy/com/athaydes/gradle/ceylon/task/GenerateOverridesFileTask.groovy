@@ -25,10 +25,24 @@ class GenerateOverridesFileTask {
     }
 
     static void run( Project project, CeylonConfig config ) {
-        generateOverridesFile( project, project.file( config.overrides ) )
+        def overridesFile = project.file( config.overrides )
+        def moduleExclusions = processedModuleExclusions config.moduleExclusions
+        generateOverridesFile( project, overridesFile, moduleExclusions )
     }
 
-    private static void generateOverridesFile( Project project, File overridesFile ) {
+    static List<Map> processedModuleExclusions( List moduleExclusions ) {
+        moduleExclusions.collect { item ->
+            switch ( item ) {
+                case String: return [ module: item ]
+                case Map: return item
+                default: return [ module: item?.toString() ]
+            }
+        } as List<Map>
+    }
+
+    private static void generateOverridesFile( Project project,
+                                               File overridesFile,
+                                               List<Map> moduleExclusions ) {
         if ( overridesFile.exists() ) overridesFile.delete()
         overridesFile.parentFile.mkdirs()
 
@@ -43,27 +57,41 @@ class GenerateOverridesFileTask {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
-        writeOverridesFile overridesFile, dependencyTree
+        writeOverridesFile overridesFile, dependencyTree, moduleExclusions
     }
 
-    private static writeOverridesFile( File overridesFile, DependencyTree dependencyTree ) {
+    private static writeOverridesFile( File overridesFile,
+                                       DependencyTree dependencyTree,
+                                       List<Map> moduleExclusions ) {
         overridesFile.withWriter { writer ->
             def xml = new MarkupBuilder( writer )
 
             xml.overrides {
+                writeExclusions moduleExclusions, xml
                 dependencyTree.resolvedDependencies.each { dep ->
                     def id = dep.selected.id
                     if ( id instanceof ModuleComponentIdentifier ) {
-                        def shared = dependencyTree.isShared( id )
-                        log.info "Adding transitive dependencies for ${id.group}:${id.module}:${id.version}" +
-                                " - shared? $shared"
-                        addTransitiveDependencies dep, xml, id, shared
+                        def name = "${id.group}:${id.module}"
+                        if ( moduleExclusions.find { it.module == name } ) {
+                            log.info "Skipping transitive dependencies of module $name because it is excluded"
+                        } else {
+                            def shared = dependencyTree.isShared( id )
+                            log.info "Adding transitive dependencies for ${name}:${id.version}" +
+                                    " - shared? $shared"
+                            addTransitiveDependencies dep, xml, id, shared
+                        }
                     } else {
                         log.warn( "Dependency will be ignored as it is of a type not supported " +
                                 "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
                     }
                 }
             }
+        }
+    }
+
+    protected static void writeExclusions( List<Map> moduleExclusions, MarkupBuilder xml ) {
+        moduleExclusions.each { item ->
+            xml.remove( item )
         }
     }
 
