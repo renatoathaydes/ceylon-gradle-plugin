@@ -1,1 +1,1 @@
-include 'log4j-sample', 'spark-web-sample', 'spring-boot-sample'
+include 'log4j-sample', 'spark-web-sample', 'spring-boot-sample', 'module-with-tests-sample'
