@@ -113,6 +113,8 @@ ceylon {
 }
 ```
 
+**See the [project samples](ceylon-gradle-plugin-tests) for working example**
+
 ## Handling transitive dependencies
 
 All direct dependencies of your project must be declared in Ceylon `module.ceylon` file.
