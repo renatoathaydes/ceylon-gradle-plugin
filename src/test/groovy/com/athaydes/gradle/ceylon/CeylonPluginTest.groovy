@@ -17,6 +17,7 @@ class CeylonPluginTest {
         assert project.tasks.cleanCeylon
         assert project.tasks.compileCeylon
         assert project.tasks.runCeylon
+        assert project.tasks.testCeylon
         assert project.tasks.resolveCeylonDependencies
         assert project.tasks.generateOverridesFile
         assert project.tasks.importJars

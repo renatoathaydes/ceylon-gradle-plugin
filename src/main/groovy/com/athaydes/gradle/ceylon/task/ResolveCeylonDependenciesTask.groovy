@@ -61,6 +61,19 @@ class ResolveCeylonDependenciesTask {
     }
 
     static File moduleFile( Project project, CeylonConfig config ) {
+        if ( !config.module ) {
+            log.error( '''|The Ceylon module has not been specified.
+                          |To specify the name of your Ceylon module, add a declaration like
+                          |the following to your build.gradle file:
+                          |
+                          |ceylon {
+                          |  module = 'name.of.ceylon.module'
+                          |}
+                          |'''.stripMargin() )
+
+            throw new GradleException( "The Ceylon module must be specified" )
+        }
+
         def moduleNameParts = config.module.split( /\./ ).toList()
 
         List locations = [ ]

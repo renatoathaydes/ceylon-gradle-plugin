@@ -15,7 +15,8 @@ class CompileCeylonTask {
     static final Logger log = Logging.getLogger( CompileCeylonTask )
 
     static List inputs( Project project, CeylonConfig config ) {
-        [ { project.files( config.sourceRoots ) },
+        [ project.buildFile,
+          { project.files( config.sourceRoots ) },
           { project.files( config.resourceRoots ) },
           GenerateOverridesFileTask.outputs( project, config ) ].flatten()
     }
@@ -24,21 +25,29 @@ class CompileCeylonTask {
         [ { project.file( config.output ) } ]
     }
 
+    static List testInputs( Project project, CeylonConfig config ) {
+        [ project.buildFile, outputs( project, config ) ]
+    }
+
     static void runCeylon( Project project, CeylonConfig config ) {
-        run 'run', project, config
+        run 'run', config.module, project, config
     }
 
     static void compileCeylon( Project project, CeylonConfig config ) {
-        run 'compile', project, config
+        run 'compile', config.module, project, config
     }
 
-    private static void run( String ceylonDirective, Project project, CeylonConfig config ) {
+    static void testCeylon( Project project, CeylonConfig config ) {
+        run 'compile', config.testModule, project, config
+        run 'test', config.testModule, project, config
+    }
+
+    private static void run( String ceylonDirective, String module, Project project, CeylonConfig config ) {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
         CeylonRunner.withCeylon( config ) { String ceylon ->
             def options = getOptions( ceylonDirective, project, config )
-
-            def command = "${ceylon} ${ceylonDirective} ${options} ${config.module}"
+            def command = "${ceylon} ${ceylonDirective} ${options} ${module}"
             log.info( "Running command: $command" )
             def process = command.execute( [ ], project.file( '.' ) )
 
@@ -67,6 +76,9 @@ class CompileCeylonTask {
                 break
             case 'run':
                 options += runOptions( project, config )
+                break
+            case 'test':
+                options += testOptions( project, config )
         }
 
         return options.join( ' ' )
@@ -84,6 +96,11 @@ class CompileCeylonTask {
     }
 
     static List runOptions( Project project, CeylonConfig config ) {
+        // no specific run options yet
+        [ ]
+    }
+
+    static List testOptions( Project project, CeylonConfig config ) {
         // no specific run options yet
         [ ]
     }
