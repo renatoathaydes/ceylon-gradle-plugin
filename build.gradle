@@ -1,8 +1,11 @@
+plugins {
+    id "com.jfrog.bintray" version "1.4"
+    id 'maven-publish'
+    id 'groovy'
+}
+
 group 'com.athaydes.gradle.ceylon'
-version '1.0-SNAPSHOT'
-
-apply plugin: 'groovy'
-
+version '1.0'
 sourceCompatibility = 1.7
 
 repositories {
@@ -12,4 +15,42 @@ repositories {
 dependencies {
     compile gradleApi()
     compile localGroovy()
+}
+
+task sourcesJar( type: Jar, dependsOn: classes ) {
+    from sourceSets.main.allSource
+    classifier "sources"
+    extension "jar"
+}
+
+/* Publishing config */
+
+publishing {
+    publications {
+        mavenJava( MavenPublication ) {
+            from components.java
+            artifact sourcesJar
+        }
+    }
+}
+
+bintray {
+    user = project.hasProperty( "bintrayUserName" ) ? bintrayUserName : null
+    key = project.hasProperty( "bintrayApiKey" ) ? bintrayApiKey : null
+    publications = [ "mavenJava" ]
+    publish = true
+    pkg {
+        repo = 'maven'
+        name = 'com.athaydes.ceylon'
+        licenses = [ 'Apache-2.0' ]
+        desc = 'A Gradle plugin to make it easy to handle Ceylon projects with Gradle'
+        vcsUrl = 'https://github.com/renatoathaydes/ceylon-gradle-plugin.git'
+        websiteUrl = 'https://github.com/renatoathaydes/ceylon-gradle-plugin'
+        issueTrackerUrl = 'https://github.com/renatoathaydes/ceylon-gradle-plugin/issues'
+        labels = [ 'ceylon' ]
+        publicDownloadNumbers = true
+        version {
+            name = project.version
+        }
+    }
 }
