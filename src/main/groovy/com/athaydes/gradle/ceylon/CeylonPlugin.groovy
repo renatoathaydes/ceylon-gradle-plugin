@@ -24,6 +24,9 @@ class CeylonPlugin implements Plugin<Project> {
     }
 
     private static createConfigs( Project project, CeylonConfig config ) {
+        // there must be a default configuration or other projects cannot depend on this one
+        project.configurations.maybeCreate( 'default' )
+
         project.configurations.create 'ceylonCompile'
         project.configurations.create 'ceylonRuntime'
     }
