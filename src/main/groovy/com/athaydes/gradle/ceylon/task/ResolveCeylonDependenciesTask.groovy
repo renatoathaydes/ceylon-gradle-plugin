@@ -14,7 +14,7 @@ class ResolveCeylonDependenciesTask {
     static final Logger log = Logging.getLogger( ResolveCeylonDependenciesTask )
     public static final String CEYLON_DEPENDENCIES = 'CeylonDependencies'
 
-    static def inputs( Project project, CeylonConfig config ) {
+    static List inputs( Project project, CeylonConfig config ) {
         // lazily-evaluated elements
         [ { moduleFile( project, config ) }, { project.buildFile } ]
     }

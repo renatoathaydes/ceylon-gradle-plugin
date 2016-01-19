@@ -2,12 +2,13 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonRunner
-import com.athaydes.gradle.ceylon.util.DependencyTree
 import org.gradle.api.GradleException
+import org.gradle.api.Nullable
 import org.gradle.api.Project
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.internal.component.external.model.ModuleComponentArtifactIdentifier
@@ -16,7 +17,7 @@ class ImportJarsTask {
 
     static final Logger log = Logging.getLogger( ImportJarsTask )
 
-    static def inputs( Project project, CeylonConfig config ) {
+    static List inputs( Project project, CeylonConfig config ) {
         ResolveCeylonDependenciesTask.inputs( project, config )
     }
 
@@ -97,17 +98,20 @@ class ImportJarsTask {
     }
 
     private static void importProjectDependencies( Project project, File repo ) {
-        def dependencyTree = project.extensions
-                .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
-
-        dependencyTree.resolvedDependencies.each { dep ->
-            def id = dep.selected.id
-
-            if ( id instanceof ProjectComponentIdentifier ) {
-                importProjectDependency project, repo, id
-            }
+        allProjectDependenciesOf( project ).each { id ->
+            importProjectDependency project, repo, id
         }
+    }
 
+    private static List<ProjectComponentIdentifier> allProjectDependenciesOf( Project project ) {
+        //noinspection GroovyAssignabilityCheck
+        project.configurations.getByName( 'ceylonCompile' )
+                .incoming.resolutionResult.root.dependencies.findAll {
+            it instanceof ResolvedDependencyResult
+        }.collectMany { ResolvedDependencyResult dependencyResult ->
+            def id = dependencyResult.selected.id
+            if ( id instanceof ProjectComponentIdentifier ) [ id ] else [ ]
+        }.flatten() as List<ProjectComponentIdentifier>
     }
 
     private static void importProjectDependency( Project project,
@@ -115,6 +119,25 @@ class ImportJarsTask {
                                                  ProjectComponentIdentifier id ) {
         log.info( 'Importing dependency: {}', id.displayName )
 
+        def dependencyOutput = projectDependencyOutputDir( project, id )
+
+        if ( dependencyOutput?.directory ) {
+            log.info( "Copying output from {} to {}", dependencyOutput, repo )
+            project.copy {
+                into repo
+                from dependencyOutput
+            }
+        } else {
+            log.warn( "Dependency on {} cannot be satisfied because its output dir does not exist: {}.\n" +
+                    "Unable to import project dependency so the build may fail!\n" +
+                    "Make sure to build all modules at the same time, or manually in the correct order.",
+                    id.displayName, dependencyOutput?.absolutePath )
+        }
+    }
+
+    @Nullable
+    private static File projectDependencyOutputDir( Project project,
+                                                    ProjectComponentIdentifier id ) {
         def dependency = project.rootProject.allprojects.find {
             it.path == id.projectPath
         }
@@ -122,33 +145,20 @@ class ImportJarsTask {
         if ( dependency == null ) {
             log.warn( "Project {} depends on project {}, but it cannot be located. " +
                     "Searched from root project {}", project.name, dependency.name, project.rootProject.name )
-            return
+            return null
         }
 
         CeylonConfig dependencyModulesLocation
 
         try {
             dependencyModulesLocation = dependency.extensions.getByName( 'ceylon' ) as CeylonConfig
-        } catch ( UnknownDomainObjectException e ) {
+        } catch ( UnknownDomainObjectException ignored ) {
             log.info( "Project {} has a dependency on {}, which does not seem to be a Ceylon Project. " +
                     "Ignoring dependency.", project.name, dependency.name )
-            return
+            return null
         }
 
-        def dependencyOutput = dependency.file( dependencyModulesLocation.output )
-
-        if ( dependencyOutput.directory ) {
-            log.info( "Copying output from {} to {}", dependencyOutput, repo )
-            project.copy {
-                into repo
-                from dependencyOutput
-            }
-        } else {
-            log.warn( "Dependency on project {} cannot be satisfies because its output dir does not exist: {}.\n" +
-                    "Unable to import project dependency!\n" +
-                    "Make sure to build all projects.",
-                    dependency.name, dependencyOutput.absolutePath )
-        }
+        dependency.file( dependencyModulesLocation.output )
     }
 
     private static File artifactLocationInRepo(
