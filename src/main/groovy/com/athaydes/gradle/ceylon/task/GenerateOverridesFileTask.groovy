@@ -6,6 +6,7 @@ import groovy.xml.MarkupBuilder
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
@@ -80,7 +81,7 @@ class GenerateOverridesFileTask {
                                     " - shared? $shared"
                             addTransitiveDependencies dep, xml, id, shared
                         }
-                    } else {
+                    } else if ( !( id instanceof ProjectComponentIdentifier ) ) {
                         log.warn( "Dependency will be ignored as it is of a type not supported " +
                                 "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
                     }
