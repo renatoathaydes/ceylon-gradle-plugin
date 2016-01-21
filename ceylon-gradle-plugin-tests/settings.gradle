@@ -3,4 +3,5 @@ include 'log4j-sample',
         'spring-boot-sample',
         'module-with-tests-sample',
         'multi-modules-sample:module1',
-        'multi-modules-sample:module2'
+        'multi-modules-sample:module2',
+        'multi-modules-sample:java-module'
