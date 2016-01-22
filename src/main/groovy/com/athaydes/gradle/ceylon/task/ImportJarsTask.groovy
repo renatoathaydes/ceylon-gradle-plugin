@@ -25,7 +25,7 @@ class ImportJarsTask {
         { ->
             allArtifactsIn( project ).collect { artifact ->
                 artifactLocationInRepo( artifact, project.file( config.output ) )
-            }
+            }.findAll { it != null }
         }
     }
 
@@ -161,6 +161,7 @@ class ImportJarsTask {
         dependency.file( dependencyModulesLocation.output )
     }
 
+    @Nullable
     private static File artifactLocationInRepo(
             ResolvedArtifact artifact, File repo ) {
         def artifactId = artifact.id
