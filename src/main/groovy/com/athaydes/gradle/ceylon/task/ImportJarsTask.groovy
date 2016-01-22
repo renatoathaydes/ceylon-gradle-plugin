@@ -5,7 +5,6 @@ import com.athaydes.gradle.ceylon.util.CeylonRunner
 import org.gradle.api.GradleException
 import org.gradle.api.Nullable
 import org.gradle.api.Project
-import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -42,10 +41,9 @@ class ImportJarsTask {
             allArtifactsIn( project ).each { artifact ->
                 importDependency ceylon, repo, artifact, project
             }
+            log.debug "Importing project dependencies files"
+            importProjectDependencies( ceylon, project, repo )
         }
-
-        log.debug "Importing project dependencies files"
-        importProjectDependencies( project, repo )
     }
 
     private static Set<ResolvedArtifact> allArtifactsIn( Project project ) {
@@ -76,13 +74,7 @@ class ImportJarsTask {
             def module = "${id.group}:${id.module}/${id.version}"
 
             if ( jarFile?.exists() ) {
-                def command = "${ceylon} import-jar --force " +
-                        "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath}"
-
-                log.info "Running command: $command"
-                def process = command.execute( [ ], project.file( '.' ) )
-
-                CeylonRunner.consumeOutputOf process
+                importJar jarFile, ceylon, repo, module, project
 
                 if ( !expectedInstallation.exists() ) {
                     log.warn( "Ceylon does not seem to have installed the artifact '${artifact.id}'" +
@@ -92,14 +84,22 @@ class ImportJarsTask {
                 throw new GradleException( "Dependency ${module} could not be installed in the Ceylon Repository" +
                         " because its jarFile could not be located: ${jarFile}" )
             }
-        } else {
-            log.warn( "Artifact being ignored as it is not a module artifact: ${artifact}" )
         }
     }
 
-    private static void importProjectDependencies( Project project, File repo ) {
+    private static void importJar( File jarFile, String ceylon, File repo, String module, Project project ) {
+        def command = "${ceylon} import-jar --force " +
+                "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath}"
+
+        log.info "Running command: $command"
+        def process = command.execute( [ ], project.file( '.' ) )
+
+        CeylonRunner.consumeOutputOf process
+    }
+
+    private static void importProjectDependencies( String ceylon, Project project, File repo ) {
         allProjectDependenciesOf( project ).each { id ->
-            importProjectDependency project, repo, id
+            importProjectDependency ceylon, project, repo, id
         }
     }
 
@@ -114,12 +114,17 @@ class ImportJarsTask {
         }.flatten() as List<ProjectComponentIdentifier>
     }
 
-    private static void importProjectDependency( Project project,
+    private static void importProjectDependency( String ceylon,
+                                                 Project project,
                                                  File repo,
                                                  ProjectComponentIdentifier id ) {
         log.info( 'Importing dependency: {}', id.displayName )
 
-        def dependencyOutput = projectDependencyOutputDir( project, id )
+        def dependency = project.rootProject.allprojects.find {
+            it.path == id.projectPath
+        }
+
+        def dependencyOutput = projectDependencyOutputDir( project, dependency )
 
         if ( dependencyOutput?.directory ) {
             log.info( "Copying output from {} to {}", dependencyOutput, repo )
@@ -127,38 +132,55 @@ class ImportJarsTask {
                 into repo
                 from dependencyOutput
             }
-        } else {
-            log.warn( "Dependency on {} cannot be satisfied because its output dir does not exist: {}.\n" +
+        }
+
+        if ( dependency.hasProperty( 'jar' ) ) {
+            importJarDependency ceylon, repo, project, dependency
+        } else if ( !dependencyOutput ) {
+            log.warn( "Dependency on {} cannot be satisfied because no Ceylon configuration or Jar archives have been found.\n" +
                     "Unable to import project dependency so the build may fail!\n" +
                     "Make sure to build all modules at the same time, or manually in the correct order.",
-                    id.displayName, dependencyOutput?.absolutePath )
+                    id.displayName )
+        }
+    }
+
+    private static void importJarDependency( String ceylon,
+                                             File repo,
+                                             Project project,
+                                             Project dependency ) {
+        def archivePath = dependency.jar.archivePath as File
+        if ( archivePath.exists() ) {
+            log.info( "Dependency archive found at {}", archivePath )
+            def module = "${dependency.group}:${dependency.name}/${dependency.version}"
+            log.info( "Importing Jar dependency: $module" )
+            importJar archivePath, ceylon, repo, module, project
+        } else {
+            log.warn( "Dependency ${dependency.name} has a JAR Archive configured, but the file does not exist.\n" +
+                    "  * $archivePath\n" +
+                    "Please make sure to build this archive before trying to build this project again!" )
         }
     }
 
     @Nullable
     private static File projectDependencyOutputDir( Project project,
-                                                    ProjectComponentIdentifier id ) {
-        def dependency = project.rootProject.allprojects.find {
-            it.path == id.projectPath
-        }
-
+                                                    Project dependency ) {
         if ( dependency == null ) {
             log.warn( "Project {} depends on project {}, but it cannot be located. " +
                     "Searched from root project {}", project.name, dependency.name, project.rootProject.name )
             return null
         }
 
-        CeylonConfig dependencyModulesLocation
+        def dependencyProperties = dependency.extensions.properties
 
-        try {
-            dependencyModulesLocation = dependency.extensions.getByName( 'ceylon' ) as CeylonConfig
-        } catch ( UnknownDomainObjectException ignored ) {
-            log.info( "Project {} has a dependency on {}, which does not seem to be a Ceylon Project. " +
-                    "Ignoring dependency.", project.name, dependency.name )
+        def ceylonConfig = dependencyProperties.ceylon
+
+        if ( ceylonConfig instanceof CeylonConfig ) {
+            return dependency.file( ceylonConfig.output )
+        } else {
+            log.info( "Project {} has a dependency on {}, which does not seem to be a Ceylon Project.",
+                    project.name, dependency.name )
             return null
         }
-
-        dependency.file( dependencyModulesLocation.output )
     }
 
     @Nullable
