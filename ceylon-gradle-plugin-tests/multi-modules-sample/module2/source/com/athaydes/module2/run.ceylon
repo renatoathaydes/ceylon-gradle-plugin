@@ -1,4 +1,5 @@
 import com.athaydes.module1 { ... }
+import com.athaydes.java_module { MyJavaClass }
 
 shared void run() {
     print("I depend on ``module1.name``");

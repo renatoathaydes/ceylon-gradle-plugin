@@ -90,7 +90,9 @@ class CompileCeylonTask {
         def options = [ ]
 
         def output = project.file( config.output )
-        options << "--out ${output.absolutePath}"
+        options <<
+                "--out ${output.absolutePath}" <<
+                "--rep ${output.absolutePath}"
 
         config.sourceRoots.each { options << "--source $it" }
         config.resourceRoots.each { options << "--resource $it" }

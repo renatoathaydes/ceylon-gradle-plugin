@@ -64,6 +64,8 @@ class ImportJarsTask {
         if ( artifactId instanceof ModuleComponentArtifactIdentifier ) {
             def expectedInstallation = artifactLocationInRepo( artifact, repo )
 
+            assert expectedInstallation, "Could not define location of artifacts for $artifactId"
+
             if ( expectedInstallation.exists() ) {
                 log.info( "Skipping installation of $artifact as it seems to be " +
                         "already installed at $expectedInstallation" )
@@ -71,7 +73,7 @@ class ImportJarsTask {
             }
 
             def id = artifactId.componentIdentifier
-            def module = "${id.group}:${id.module}/${id.version}"
+            def module = "${id.group}.${id.module}/${id.version}"
 
             if ( jarFile?.exists() ) {
                 importJar jarFile, ceylon, repo, module, project
@@ -91,7 +93,7 @@ class ImportJarsTask {
         def command = "${ceylon} import-jar --force " +
                 "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath}"
 
-        log.info "Running command: $command"
+        log.info "Running command: {}", command
         def process = command.execute( [ ], project.file( '.' ) )
 
         CeylonRunner.consumeOutputOf process
@@ -151,7 +153,7 @@ class ImportJarsTask {
         def archivePath = dependency.jar.archivePath as File
         if ( archivePath.exists() ) {
             log.info( "Dependency archive found at {}", archivePath )
-            def module = "${dependency.group}:${dependency.name}/${dependency.version}"
+            def module = "${dependency.group}.${dependency.name}/${dependency.version}"
             log.info( "Importing Jar dependency: $module" )
             importJar archivePath, ceylon, repo, module, project
         } else {
@@ -170,9 +172,7 @@ class ImportJarsTask {
             return null
         }
 
-        def dependencyProperties = dependency.extensions.properties
-
-        def ceylonConfig = dependencyProperties.ceylon
+        def ceylonConfig = dependency.extensions.findByName( 'ceylon' )
 
         if ( ceylonConfig instanceof CeylonConfig ) {
             return dependency.file( ceylonConfig.output )
@@ -196,7 +196,7 @@ class ImportJarsTask {
             def ext = artifact.extension
 
             // use the default Ceylon pattern
-            def location = "$groupPath:$name/$version/$group:${name}-${version}.$ext"
+            def location = "$groupPath/$name/$version/$group.${name}-${version}.$ext"
             return new File( repo, location )
         } else {
             return null
