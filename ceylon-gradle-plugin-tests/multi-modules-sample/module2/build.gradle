@@ -9,10 +9,9 @@ repositories {
 
 ceylon {
     module = 'com.athaydes.module2'
-    flatClassPath = true
 }
 
 dependencies {
     ceylonCompile project( ':multi-modules-sample:module1' )
-    ceylonCompile project(':multi-modules-sample:java-module')
+    ceylonCompile project( ':multi-modules-sample:java-module' )
 }

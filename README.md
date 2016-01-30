@@ -97,6 +97,8 @@ The following properties can be set in the `ceylon` block:
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.
 * `moduleExclusions`: (default: `[]`) name of the modules to remove from the compilation and runtime.
 * `overrides`: (default: `'auto-generated/overrides.xml'`) location to store the automatically-generated overrides.xml file.
+* `mavenSettings`: (default: `'auto-generated/settings.xml'`) location of Maven settings file.
+   If the file already exists, it is not overwritten, otherwise an appropriate file is generated (recommended).
 * `flatClassPath`: (default: `false`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
 
 An example configuration (using most options above) might look like this:

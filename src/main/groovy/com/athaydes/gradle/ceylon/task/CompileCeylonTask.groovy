@@ -72,6 +72,9 @@ class CompileCeylonTask {
             options << '--flat-classpath'
         }
 
+        options << "--rep=aether:${project.file( config.mavenSettings ).absolutePath}" <<
+                "--rep=${project.file( config.output ).absolutePath}"
+
         switch ( ceylonDirective ) {
             case 'compile':
                 options += compileOptions( project, config )
@@ -90,9 +93,7 @@ class CompileCeylonTask {
         def options = [ ]
 
         def output = project.file( config.output )
-        options <<
-                "--out ${output.absolutePath}" <<
-                "--rep ${output.absolutePath}"
+        options << "--out=${output.absolutePath}"
 
         config.sourceRoots.each { options << "--source $it" }
         config.resourceRoots.each { options << "--resource $it" }

@@ -11,6 +11,7 @@ class CeylonConfig {
     String module = ''
     List moduleExclusions = [ ]
     String overrides = 'auto-generated/overrides.xml'
+    String mavenSettings = 'auto-generated/settings.xml'
     Boolean flatClassPath = false
 
     String testModule = ''

@@ -91,7 +91,7 @@ class ResolveCeylonDependenciesTask {
                 "Looked at the following locations: $locations" )
     }
 
-    private static DependencyTree dependencyTreeOf( Project project, Map moduleDeclaration ) {
+    static DependencyTree dependencyTreeOf( Project project, Map moduleDeclaration ) {
         new DependencyTree( project.configurations.getByName( 'ceylonCompile' )
                 .incoming.resolutionResult.root, moduleDeclaration )
     }
