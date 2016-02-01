@@ -1,6 +1,10 @@
 package com.athaydes.gradle.ceylon
 
-import com.athaydes.gradle.ceylon.task.*
+import com.athaydes.gradle.ceylon.task.CleanTask
+import com.athaydes.gradle.ceylon.task.CompileCeylonTask
+import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
+import com.athaydes.gradle.ceylon.task.ImportJarsTask
+import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -18,6 +22,8 @@ class CeylonPlugin implements Plugin<Project> {
 
         CeylonConfig config = project.extensions
                 .create( 'ceylon', CeylonConfig )
+        config.moduleImportOverrides = project.extensions
+                .create( 'moduleImportOverrides', ModuleImportOverrides )
 
         createConfigs project, config
         createTasks project, config
@@ -27,8 +33,8 @@ class CeylonPlugin implements Plugin<Project> {
         // there must be a default configuration or other projects cannot depend on this one
         project.configurations.maybeCreate( 'default' )
 
-        project.configurations.create 'ceylonCompile'
-        project.configurations.create 'ceylonRuntime'
+        def compile = project.configurations.create 'ceylonCompile'
+        project.configurations.create( 'ceylonRuntime' ).extendsFrom( compile )
     }
 
     private static createTasks( Project project, CeylonConfig config ) {
@@ -48,7 +54,7 @@ class CeylonPlugin implements Plugin<Project> {
                         ' that if they require transitive dependencies, they are added to the auto-generated' +
                         ' overrides file.',
                 'generateOverridesFile' ) << {
-            GenerateOverridesFileTask.run( project, config )
+            //GenerateOverridesFileTask.run( project, config )
         }
 
         generateOverridesFile.inputs.files GenerateOverridesFileTask.inputs( project, config )
@@ -58,7 +64,7 @@ class CeylonPlugin implements Plugin<Project> {
                 dependsOn: 'resolveCeylonDependencies',
                 description: 'Import transitive dependencies into the Ceylon local repository if needed.',
                 'importJars' ) << {
-            ImportJarsTask.run( project, config )
+            new ImportJarsTask( project, config ).run()
         }
 
         importJarsTask.inputs.files( ImportJarsTask.inputs( project, config ) )

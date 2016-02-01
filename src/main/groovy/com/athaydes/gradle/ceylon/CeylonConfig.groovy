@@ -13,6 +13,7 @@ class CeylonConfig {
     String overrides = 'auto-generated/overrides.xml'
     String mavenSettings = 'auto-generated/settings.xml'
     Boolean flatClassPath = false
+    ModuleImportOverrides moduleImportOverrides
 
     String testModule = ''
 
@@ -20,4 +21,11 @@ class CeylonConfig {
         this.@testModule ?: module
     }
 
+}
+
+class ModuleImportOverrides {
+    Boolean forceModuleImports = false
+    Boolean showSuggestions = false
+    Map<String, List<String>> extraImports = [ : ]
+    List<String> excludeImports = [ ]
 }

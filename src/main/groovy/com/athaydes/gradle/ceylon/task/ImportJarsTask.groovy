@@ -2,11 +2,15 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonRunner
+import com.athaydes.gradle.ceylon.util.ModuleDescriptorWriter
+import com.athaydes.gradle.ceylon.util.ProjectDependencyTree
+import groovy.transform.CompileStatic
+import groovy.transform.EqualsAndHashCode
 import org.gradle.api.GradleException
 import org.gradle.api.Nullable
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ResolvedArtifact
-import org.gradle.api.artifacts.ResolvedConfiguration
+import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -24,24 +28,27 @@ class ImportJarsTask {
 
     static def outputs( Project project, CeylonConfig config ) {
         { ->
-            allArtifactsIn( project ).collect { artifact ->
-                artifactLocationInRepo( artifact, project.file( config.output ) )
-            }.findAll { it != null }
+            new ProjectDependencyTree( project, config ).allDependencies( 'ceylonRuntime' ).collect { dependency ->
+                artifactLocationsInRepo( dependency, project.file( config.output ) )
+            }.flatten()
         }
     }
 
-    static emptyModuleDescriptor( Project project ) {
-        def tmpDir = new File( project.buildDir, 'tmp' )
-        tmpDir.mkdirs()
-        new File( tmpDir, 'empty-module-descriptor.properties' )
+    private final Project project
+    private final CeylonConfig config
+    private final ModuleDescriptorWriter moduleDescriptorWriter
+
+    ImportJarsTask( Project project, CeylonConfig config ) {
+        this.project = project
+        this.config = config
+        this.moduleDescriptorWriter = new ModuleDescriptorWriter( project, config )
     }
 
-    static void run( Project project, CeylonConfig config ) {
-        log.debug "Importing artifact jars"
+    void run() {
+        log.info "Importing required jars into the local Ceylon Repository"
 
-        emptyModuleDescriptor( project ).createNewFile()
-
-        createMavenSettingsFile project, config
+        moduleDescriptorWriter.writeBasicModuleDescriptor()
+        createMavenSettingsFile()
 
         def repo = project.file( config.output )
 
@@ -49,16 +56,37 @@ class ImportJarsTask {
             throw new GradleException( "Output repository does not exist and cannot be created ${repo.absolutePath}." )
         }
 
+        def dependencyTree = new ProjectDependencyTree( project, config )
+
         CeylonRunner.withCeylon( config ) { String ceylon ->
-            allArtifactsIn( project ).each { artifact ->
-                importDependency ceylon, repo, artifact, project
+            Map<ResolvedDependency, Integer> toRetry = [ : ]
+            def install = { ResolvedDependency dependency ->
+                try {
+                    importDependency ceylon, repo, dependency
+                } catch ( GradleException ignored ) {
+                    def retries = toRetry.computeIfAbsent( dependency, { 2 } )
+                    toRetry[ dependency ] = retries - 1
+                    log.warn( "Failed to import {}. Will retry {} times", dependency.name, retries )
+                    if ( !retries ) {
+                        throw new GradleException( "Unable to install ${dependency.name}" )
+                    }
+                }
             }
+
+            dependencyTree.allDependencies( 'ceylonRuntime' ).each( install )
+
+            while ( toRetry.values().any { it > 0 } ) {
+                log.warn( "Attempting to install again" )
+                toRetry.findAll { dep, retries -> retries > 0 }
+                        .each { dep, retries -> install dep }
+            }
+
             log.debug "Importing project dependencies files"
-            importProjectDependencies( ceylon, project, repo )
+            importProjectDependencies ceylon, repo
         }
     }
 
-    private static File createMavenSettingsFile( Project project, CeylonConfig config ) {
+    private File createMavenSettingsFile() {
         def settingsFile = project.file( config.mavenSettings )
 
         // do not overwrite file if already there
@@ -80,37 +108,40 @@ class ImportJarsTask {
             |""".stripMargin()
     }
 
-    private static Set<ResolvedArtifact> allArtifactsIn( Project project ) {
-        project.configurations.ceylonCompile
-                .resolvedConfiguration
-                .resolvedArtifacts
-    }
+    private void importDependency( String ceylon,
+                                   File repo,
+                                   ResolvedDependency dependency ) {
+        if ( dependency.name.startsWith( 'java' ) ) {
+            log.warn( "Skipping installation of dependency [{}]. JDK dependencies cannot be imported" +
+                    " into the Ceylon repository", dependency )
+            return
+        }
 
-    private static void importDependency( String ceylon,
-                                          File repo,
-                                          ResolvedArtifact artifact,
-                                          Project project ) {
-        log.debug( "Will try to install ${artifact} into the Ceylon repository" )
+        log.info( "Will try to install {} into the Ceylon repository", dependency )
 
-        def jarFile = artifact.file
-        def artifactId = artifact.id
+        def expectedInstallations = artifactLocationsInRepo( dependency, repo )
 
-        if ( artifactId instanceof ModuleComponentArtifactIdentifier ) {
-            def expectedInstallation = artifactLocationInRepo( artifact, repo )
+        for ( artifact in jarArtifactsFor( dependency ) ) {
+
+            def jarFile = artifact.artifact.file
+            def artifactId = artifact.id
+
+            def expectedInstallation = expectedInstallations.find { it.name.endsWith jarFile.name }
 
             assert expectedInstallation, "Could not define location of artifacts for $artifactId"
 
             if ( expectedInstallation.exists() ) {
                 log.info( "Skipping installation of $artifact as it seems to be " +
                         "already installed at $expectedInstallation" )
-                return
+                continue
             }
 
-            def id = artifactId.componentIdentifier
-            def module = "${id.group}.${id.module}/${id.version}"
+            def module = "${artifactId.group}.${artifactId.module}/${artifactId.version}"
 
             if ( jarFile?.exists() ) {
-                importJar jarFile, ceylon, repo, module, project
+                def children = ProjectDependencyTree.buildDependencyTreeRecursively( dependency.children, config )
+                        .collectMany { jarArtifactsFor( it ).collect { it.id } }
+                importJar jarFile, ceylon, repo, module, children
 
                 if ( !expectedInstallation.exists() ) {
                     log.warn( "Ceylon does not seem to have installed the artifact '${artifact.id}'" +
@@ -123,10 +154,13 @@ class ImportJarsTask {
         }
     }
 
-    private static void importJar( File jarFile, String ceylon, File repo, String module,
-                                   Project project, List<ModuleComponentIdentifier> moduleDependencies = [ ] ) {
-        def moduleDescriptor = writeModuleDescriptor project, moduleDependencies
-        def command = "${ceylon} import-jar --descriptor=${moduleDescriptor} " +
+    @CompileStatic
+    private void importJar( File jarFile, String ceylon, File repo, String module,
+                            List<ModuleComponentIdentifier> moduleDependencies ) {
+        def moduleDescriptor = moduleDescriptorWriter.writeModuleDescriptor module, moduleDependencies
+        def force = config.moduleImportOverrides.forceModuleImports ? ' --force' : ''
+        def suggestions = config.moduleImportOverrides.showSuggestions ? ' --show-suggestions' : ''
+        def command = "${ceylon} import-jar${force}${suggestions} --descriptor=${moduleDescriptor} " +
                 "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath}"
 
         log.info "Running command: {}", command
@@ -135,48 +169,36 @@ class ImportJarsTask {
         CeylonRunner.consumeOutputOf process
     }
 
-    private static writeModuleDescriptor( Project project, List<ModuleComponentIdentifier> moduleDependencies ) {
-        if ( moduleDependencies.empty ) emptyModuleDescriptor( project ).absolutePath
-        else {
-            def moduleDescriptor = new File( project.buildDir, "tmp/${project.name}-deps.properties" )
-            moduleDescriptor.delete() // make sure the file is empty
-            moduleDependencies.each { dep ->
-                moduleDescriptor << "${dep.group}.${dep.module}=${dep.version}"
-            }
-            return moduleDescriptor.absolutePath
-        }
-    }
-
-    private static void importProjectDependencies( String ceylon, Project project, File repo ) {
+    private void importProjectDependencies( String ceylon,
+                                            File repo ) {
         allProjectDependenciesOf( project ).each { id ->
             def dependency = project.rootProject.allprojects.find {
                 it.path == id.projectPath
             }
-            def transitiveDeps = transitiveCompileDependenciesOf dependency
-            def moduleDependencies = importConfigurationJars ceylon, project, repo, transitiveDeps
-            importProjectDependency ceylon, project, repo, dependency, moduleDependencies
+            assert dependency, "Project dependency does not exist under the root project: $dependency"
+            def transitiveDeps = new ProjectDependencyTree( dependency, config ).allDependencies( 'compile' )
+            def moduleDependencies = importConfigurationJars ceylon, repo, transitiveDeps
+            importProjectDependency ceylon, repo, dependency, moduleDependencies
         }
     }
 
     private static List<ProjectComponentIdentifier> allProjectDependenciesOf( Project project ) {
-        //noinspection GroovyAssignabilityCheck
         project.configurations.getByName( 'ceylonCompile' )
                 .incoming.resolutionResult.root.dependencies.findAll {
             it instanceof ResolvedDependencyResult
-        }.collectMany { ResolvedDependencyResult dependencyResult ->
-            def id = dependencyResult.selected.id
+        }.collectMany { dependencyResult ->
+            def id = ( dependencyResult as ResolvedDependencyResult ).selected.id
             if ( id instanceof ProjectComponentIdentifier ) [ id ] else [ ]
-        }.flatten() as List<ProjectComponentIdentifier>
+        } as List<ProjectComponentIdentifier>
     }
 
-    private static void importProjectDependency( String ceylon,
-                                                 Project project,
-                                                 File repo,
-                                                 Project dependency,
-                                                 List<ModuleComponentIdentifier> moduleDependencies = [ ] ) {
+    private void importProjectDependency( String ceylon,
+                                          File repo,
+                                          Project dependency,
+                                          List<ModuleComponentIdentifier> moduleDependencies ) {
         log.info( 'Importing dependency: {}', dependency.name )
 
-        def dependencyOutput = projectDependencyOutputDir( project, dependency )
+        def dependencyOutput = projectDependencyOutputDir dependency
 
         if ( dependencyOutput?.directory ) {
             log.info( "Copying output from {} to {}", dependencyOutput, repo )
@@ -187,7 +209,7 @@ class ImportJarsTask {
         }
 
         if ( dependency.hasProperty( 'jar' ) ) {
-            importJarDependency ceylon, repo, project, dependency, moduleDependencies
+            importJarDependency ceylon, repo, dependency, moduleDependencies
         } else if ( !dependencyOutput ) {
             log.warn( "Dependency on {} cannot be satisfied because no Ceylon configuration or Jar archives have been found.\n" +
                     "Unable to import project dependency so the build may fail!\n" +
@@ -196,40 +218,50 @@ class ImportJarsTask {
         }
     }
 
-    @Nullable
-    private static ResolvedConfiguration transitiveCompileDependenciesOf( Project project ) {
-        project.configurations.findByName( 'compile' )?.resolvedConfiguration
-    }
+    @CompileStatic
+    private static Set<ModuleArtifact> jarArtifactsFor(
+            ResolvedDependency dependency ) {
+        dependency.moduleArtifacts.collect { artifact ->
+            def id = artifact.id.componentIdentifier
 
-    private static List<ModuleComponentIdentifier> importConfigurationJars(
-            String ceylon, Project project, File repo,
-            @Nullable ResolvedConfiguration resolvedConfiguration ) {
-        if ( !resolvedConfiguration ) return [ ]
-        resolvedConfiguration.resolvedArtifacts.collect { dep ->
-            def id = dep.id.componentIdentifier
-            if ( dep.type == 'jar' && id instanceof ModuleComponentIdentifier ) {
-                def module = "${id.group}.${id.module}/${id.version}"
-                log.info "Importing JAR transitive dependency: {}", module
-                importJar dep.file, ceylon, repo, module, project
-                return id
+            if ( artifact.type == 'jar' && id instanceof ModuleComponentIdentifier ) {
+                assert id instanceof ModuleComponentIdentifier
+                new ModuleArtifact( id, artifact )
             } else {
                 log.warn( "Unable to import dependency [{}]. Not a default JAR dependency.", id )
-                return null
+                null
             }
-        }.findAll { it != null }
+        }.findAll { it != null } as Set<ModuleArtifact>
     }
 
-    private static void importJarDependency( String ceylon,
-                                             File repo,
-                                             Project project,
-                                             Project dependency,
-                                             List<ModuleComponentIdentifier> moduleDependencies ) {
+    private List<ModuleComponentIdentifier> importConfigurationJars(
+            String ceylon, File repo,
+            Set<ResolvedDependency> dependencies ) {
+        dependencies.collectMany { dep ->
+            def children = ProjectDependencyTree.buildDependencyTreeRecursively( dep.children, config )
+                    .collectMany { jarArtifactsFor( it ).collect { it.id } }
+
+            jarArtifactsFor( dep ).collect { moduleArtifact ->
+                def artifact = moduleArtifact.artifact
+                def id = moduleArtifact.id
+                def module = "${id.group}.${id.module}/${id.version}"
+                log.info "Importing JAR transitive dependency: {}", module
+                importJar artifact.file, ceylon, repo, module, children
+                return id
+            }
+        } as List<ModuleComponentIdentifier>
+    }
+
+    private void importJarDependency( String ceylon,
+                                      File repo,
+                                      Project dependency,
+                                      List<ModuleComponentIdentifier> moduleDependencies ) {
         def archivePath = dependency.jar.archivePath as File
         if ( archivePath.exists() ) {
             log.debug( "Dependency archive found at {}", archivePath )
             def module = "${dependency.group}.${dependency.name}/${dependency.version}"
             log.info( "Importing Jar dependency: $module" )
-            importJar archivePath, ceylon, repo, module, project, moduleDependencies
+            importJar archivePath, ceylon, repo, module, moduleDependencies
         } else {
             log.warn( "Dependency ${dependency.name} has a JAR Archive configured, but the file does not exist.\n" +
                     "  * $archivePath\n" +
@@ -238,8 +270,7 @@ class ImportJarsTask {
     }
 
     @Nullable
-    private static File projectDependencyOutputDir( Project project,
-                                                    Project dependency ) {
+    private File projectDependencyOutputDir( Project dependency ) {
         if ( dependency == null ) {
             log.warn( "Project {} depends on project [{}], but it cannot be located. " +
                     "Searched from root project [{}].", project.name, dependency.name, project.rootProject.name )
@@ -258,23 +289,35 @@ class ImportJarsTask {
         }
     }
 
-    @Nullable
-    private static File artifactLocationInRepo(
-            ResolvedArtifact artifact, File repo ) {
-        def artifactId = artifact.id
-        if ( artifactId instanceof ModuleComponentArtifactIdentifier ) {
-            def id = artifactId.componentIdentifier
-            def group = id.group
-            def groupPath = group.replace( '.', '/' )
-            def name = id.module
-            def version = id.version
-            def ext = artifact.extension
+    private static List<File> artifactLocationsInRepo(
+            ResolvedDependency dependency, File repo ) {
+        dependency.moduleArtifacts.collect { artifact ->
+            def artifactId = artifact.id
+            if ( artifactId instanceof ModuleComponentArtifactIdentifier ) {
+                def id = artifactId.componentIdentifier
+                def group = id.group
+                def groupPath = group.replace( '.', '/' )
+                def name = id.module
+                def version = id.version
+                def ext = artifact.extension
 
-            // use the default Ceylon pattern
-            def location = "$groupPath/$name/$version/$group.${name}-${version}.$ext"
-            return new File( repo, location )
-        } else {
-            return null
+                // use the default Ceylon pattern
+                def location = "$groupPath/$name/$version/$group.${name}-${version}.$ext"
+                return new File( repo, location )
+            } else {
+                return null
+            }
+        }.findAll { it != null }
+    }
+
+    @EqualsAndHashCode( includes = [ 'id' ] )
+    static class ModuleArtifact {
+        final ModuleComponentIdentifier id
+        final ResolvedArtifact artifact
+
+        ModuleArtifact( ModuleComponentIdentifier id, ResolvedArtifact artifact ) {
+            this.id = id
+            this.artifact = artifact
         }
     }
 

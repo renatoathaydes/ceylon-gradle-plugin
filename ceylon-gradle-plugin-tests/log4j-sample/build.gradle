@@ -10,4 +10,8 @@ repositories {
 ceylon {
     module = "com.athaydes.maven"
     flatClassPath = true
+
+    moduleImportOverrides {
+        forceModuleImports = true
+    }
 }

@@ -92,7 +92,7 @@ class ResolveCeylonDependenciesTask {
     }
 
     static DependencyTree dependencyTreeOf( Project project, Map moduleDeclaration ) {
-        new DependencyTree( project.configurations.getByName( 'ceylonCompile' )
+        new DependencyTree( project.configurations.getByName( 'ceylonRuntime' )
                 .incoming.resolutionResult.root, moduleDeclaration )
     }
 

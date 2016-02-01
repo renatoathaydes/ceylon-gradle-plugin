@@ -9,6 +9,9 @@ repositories {
 }
 
 dependencies {
+    // required just so we can mark this as optional in extraImports
+    ceylonRuntime "org.eclipse.jetty:jetty-jmx:9.3.2.v20150730"
+
     ceylonCompile "com.sparkjava:spark-core:2.3", {
         exclude group: 'org.eclipse.jetty.websocket'
     }
@@ -17,4 +20,22 @@ dependencies {
 ceylon {
     module = "com.athaydes.sparkweb"
     flatClassPath = true
+    moduleImportOverrides {
+        forceModuleImports = false
+        showSuggestions = false
+
+        // values obtained by running the build and letting Ceylon suggest missing modules
+        extraImports += [
+                '.*\\.jetty-util/.*'  : [
+                        '+java.logging=8',
+                        '+java.tls=8',
+                        '+oracle.jdk.base=8',
+                        '+javax.servlet=3.1.0',
+                        '+org.slf4j.slf4j-api=1.7.12' ],
+                '.*\\.jetty-server/.*': [
+                        'org.eclipse.jetty.jetty-jmx?=9.3.2.v20150730'
+                ]
+        ]
+        excludeImports += [ 'java.*' ]
+    }
 }
