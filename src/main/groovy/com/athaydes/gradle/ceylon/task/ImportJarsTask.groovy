@@ -30,16 +30,8 @@ class ImportJarsTask {
         }
     }
 
-    static emptyModuleDescriptor( Project project ) {
-        def tmpDir = new File( project.buildDir, 'tmp' )
-        tmpDir.mkdirs()
-        new File( tmpDir, 'empty-module-descriptor.properties' )
-    }
-
     static void run( Project project, CeylonConfig config ) {
         log.debug "Importing artifact jars"
-
-        emptyModuleDescriptor( project ).createNewFile()
 
         createMavenSettingsFile project, config
 
@@ -123,10 +115,9 @@ class ImportJarsTask {
         }
     }
 
-    private static void importJar( File jarFile, String ceylon, File repo, String module,
-                                   Project project, List<ModuleComponentIdentifier> moduleDependencies = [ ] ) {
-        def moduleDescriptor = writeModuleDescriptor project, moduleDependencies
-        def command = "${ceylon} import-jar --descriptor=${moduleDescriptor} " +
+    private static void importJar( File jarFile, String ceylon, File repo,
+                                   String module, Project project ) {
+        def command = "${ceylon} import-jar --force " +
                 "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath}"
 
         log.info "Running command: {}", command
@@ -135,26 +126,14 @@ class ImportJarsTask {
         CeylonRunner.consumeOutputOf process
     }
 
-    private static writeModuleDescriptor( Project project, List<ModuleComponentIdentifier> moduleDependencies ) {
-        if ( moduleDependencies.empty ) emptyModuleDescriptor( project ).absolutePath
-        else {
-            def moduleDescriptor = new File( project.buildDir, "tmp/${project.name}-deps.properties" )
-            moduleDescriptor.delete() // make sure the file is empty
-            moduleDependencies.each { dep ->
-                moduleDescriptor << "${dep.group}.${dep.module}=${dep.version}"
-            }
-            return moduleDescriptor.absolutePath
-        }
-    }
-
     private static void importProjectDependencies( String ceylon, Project project, File repo ) {
         allProjectDependenciesOf( project ).each { id ->
             def dependency = project.rootProject.allprojects.find {
                 it.path == id.projectPath
             }
-            def transitiveDeps = transitiveCompileDependenciesOf dependency
-            def moduleDependencies = importConfigurationJars ceylon, project, repo, transitiveDeps
-            importProjectDependency ceylon, project, repo, dependency, moduleDependencies
+            def transitiveDeps = transitiveCompileDependenciesOf( dependency )
+            importDependencySet ceylon, project, repo, transitiveDeps
+            importProjectDependency ceylon, project, repo, dependency
         }
     }
 
@@ -172,8 +151,7 @@ class ImportJarsTask {
     private static void importProjectDependency( String ceylon,
                                                  Project project,
                                                  File repo,
-                                                 Project dependency,
-                                                 List<ModuleComponentIdentifier> moduleDependencies = [ ] ) {
+                                                 Project dependency ) {
         log.info( 'Importing dependency: {}', dependency.name )
 
         def dependencyOutput = projectDependencyOutputDir( project, dependency )
@@ -187,7 +165,7 @@ class ImportJarsTask {
         }
 
         if ( dependency.hasProperty( 'jar' ) ) {
-            importJarDependency ceylon, repo, project, dependency, moduleDependencies
+            importJarDependency ceylon, repo, project, dependency
         } else if ( !dependencyOutput ) {
             log.warn( "Dependency on {} cannot be satisfied because no Ceylon configuration or Jar archives have been found.\n" +
                     "Unable to import project dependency so the build may fail!\n" +
@@ -201,35 +179,34 @@ class ImportJarsTask {
         project.configurations.findByName( 'compile' )?.resolvedConfiguration
     }
 
-    private static List<ModuleComponentIdentifier> importConfigurationJars(
+    private static void importDependencySet(
             String ceylon, Project project, File repo,
             @Nullable ResolvedConfiguration resolvedConfiguration ) {
-        if ( !resolvedConfiguration ) return [ ]
-        resolvedConfiguration.resolvedArtifacts.collect { dep ->
+        if ( !resolvedConfiguration ) return
+
+        for ( dep in resolvedConfiguration.resolvedArtifacts ) {
+
             def id = dep.id.componentIdentifier
             if ( dep.type == 'jar' && id instanceof ModuleComponentIdentifier ) {
                 def module = "${id.group}.${id.module}/${id.version}"
                 log.info "Importing JAR transitive dependency: {}", module
                 importJar dep.file, ceylon, repo, module, project
-                return id
             } else {
                 log.warn( "Unable to import dependency [{}]. Not a default JAR dependency.", id )
-                return null
             }
-        }.findAll { it != null }
+        }
     }
 
     private static void importJarDependency( String ceylon,
                                              File repo,
                                              Project project,
-                                             Project dependency,
-                                             List<ModuleComponentIdentifier> moduleDependencies ) {
+                                             Project dependency ) {
         def archivePath = dependency.jar.archivePath as File
         if ( archivePath.exists() ) {
             log.debug( "Dependency archive found at {}", archivePath )
             def module = "${dependency.group}.${dependency.name}/${dependency.version}"
             log.info( "Importing Jar dependency: $module" )
-            importJar archivePath, ceylon, repo, module, project, moduleDependencies
+            importJar archivePath, ceylon, repo, module, project
         } else {
             log.warn( "Dependency ${dependency.name} has a JAR Archive configured, but the file does not exist.\n" +
                     "  * $archivePath\n" +

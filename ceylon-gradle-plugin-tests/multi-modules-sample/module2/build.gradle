@@ -8,6 +8,7 @@ repositories {
 }
 
 ceylon {
+    flatClassPath = true
     module = 'com.athaydes.module2'
 }
 
