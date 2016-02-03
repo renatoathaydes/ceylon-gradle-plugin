@@ -89,8 +89,7 @@ class ResolveCeylonDependenciesTask {
     }
 
     static DependencyTree dependencyTreeOf( Project project, Map moduleDeclaration ) {
-        new DependencyTree( project.configurations.getByName( 'ceylonCompile' )
-                .incoming.resolutionResult.root, moduleDeclaration )
+        new DependencyTree( project, moduleDeclaration )
     }
 
     private static void addMavenDependency( Map dependency, Project project ) {

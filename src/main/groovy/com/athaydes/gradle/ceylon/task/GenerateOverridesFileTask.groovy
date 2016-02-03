@@ -5,9 +5,7 @@ import com.athaydes.gradle.ceylon.util.DependencyTree
 import groovy.xml.MarkupBuilder
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
@@ -69,23 +67,30 @@ class GenerateOverridesFileTask {
 
             xml.overrides {
                 writeExclusions moduleExclusions, xml
-                dependencyTree.resolvedDependencies.each { dep ->
-                    def id = dep.selected.id
-                    if ( id instanceof ModuleComponentIdentifier ) {
-                        def name = "${id.group}:${id.module}"
-                        if ( moduleExclusions.find { it.module == name } ) {
-                            log.info "Skipping transitive dependencies of module $name because it is excluded"
-                        } else {
-                            def shared = dependencyTree.isShared( id )
-                            log.info "Adding transitive dependencies for ${name}:${id.version}" +
-                                    " - shared? $shared"
-                            addTransitiveDependencies dep, xml, id, shared
+                dependencyTree.moduleDeclaredDependencies.each { dep ->
+                    def name = "${dep.moduleGroup}:${dep.moduleName}"
+                    if ( moduleExclusions.find { it.module == name } ) {
+                        log.info "Skipping transitive dependencies of module {} because it is excluded", id
+                    } else {
+                        def shared = dependencyTree.isShared( dep )
+                        def transitiveDeps = DependencyTree.transitiveDependenciesOf( dep )
+                        if ( transitiveDeps ) {
+                            writeDependency( dep, name, shared, transitiveDeps, xml )
                         }
-                    } else if ( !( id instanceof ProjectComponentIdentifier ) ) {
-                        log.warn( "Dependency will be ignored as it is of a type not supported " +
-                                "by the Ceylon plugin: $id TYPE: ${id?.class?.name}" )
                     }
                 }
+            }
+        }
+    }
+
+    private static void writeDependency( ResolvedDependency dep, String name, boolean shared,
+                                         Collection<ResolvedDependency> transitiveDeps,
+                                         MarkupBuilder xml ) {
+        def id = "$name/${dep.moduleVersion}"
+        xml.artifact( coordinatesOf( dep, shared ) ) {
+            log.info "Writing overrides with transitive dependencies for {} - shared? {}", id, shared
+            for ( transitiveDep in transitiveDeps ) {
+                add( coordinatesOf( transitiveDep, true ) )
             }
         }
     }
@@ -96,34 +101,11 @@ class GenerateOverridesFileTask {
         }
     }
 
-    protected static void addTransitiveDependencies(
-            ResolvedDependencyResult dep,
-            MarkupBuilder xml,
-            ModuleComponentIdentifier id,
-            boolean shared ) {
-        def transitiveDeps = DependencyTree.transitiveDependenciesOf( dep )
-        if ( transitiveDeps ) {
-            xml.artifact( coordinatesOf( id, shared ) ) {
-                for ( trans in transitiveDeps ) {
-                    if ( trans instanceof ResolvedDependencyResult ) {
-                        def transId = trans.selected.id
-                        if ( transId instanceof ModuleComponentIdentifier ) {
-                            xml.add( coordinatesOf( transId, true ) )
-                        } else {
-                            log.warn "Ignoring transitive dependency as its selected ID type is not supported" +
-                                    " by the Ceylon plugin: ${transId.displayName}"
-                        }
-                    } else {
-                        log.warn "Ignoring transitive dependency as its type is not supported" +
-                                " by the Ceylon plugin: ${trans.requested.displayName}"
-                    }
-                }
-            }
-        }
-    }
-
-    protected static Map coordinatesOf( ModuleComponentIdentifier id, boolean shared ) {
-        def result = [ groupId: id.group, artifactId: id.module, version: id.version ]
+    protected static Map coordinatesOf( ResolvedDependency dep, boolean shared ) {
+        def result = [
+                groupId   : dep.moduleGroup,
+                artifactId: dep.moduleName,
+                version   : dep.moduleVersion ]
         if ( shared ) result.shared = true
         result
     }
