@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon
 
 import com.athaydes.gradle.ceylon.task.CleanTask
 import com.athaydes.gradle.ceylon.task.CompileCeylonTask
+import com.athaydes.gradle.ceylon.task.CreateDependenciesPomsTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
 import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
@@ -57,6 +58,13 @@ class CeylonPlugin implements Plugin<Project> {
 
         generateOverridesFile.inputs.files GenerateOverridesFileTask.inputs( project, config )
         generateOverridesFile.outputs.files GenerateOverridesFileTask.outputs( project, config )
+
+        project.task(
+                dependsOn: 'resolveCeylonDependencies',
+                description: '',
+                'createDependenciesPoms' ) << {
+            CreateDependenciesPomsTask.run( project, config )
+        }
 
         Task importJarsTask = project.task(
                 dependsOn: 'resolveCeylonDependencies',
