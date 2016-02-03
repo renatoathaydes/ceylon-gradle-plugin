@@ -1,6 +1,10 @@
 package com.athaydes.gradle.ceylon
 
-import com.athaydes.gradle.ceylon.task.*
+import com.athaydes.gradle.ceylon.task.CleanTask
+import com.athaydes.gradle.ceylon.task.CompileCeylonTask
+import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
+import com.athaydes.gradle.ceylon.task.ImportJarsTask
+import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -27,8 +31,8 @@ class CeylonPlugin implements Plugin<Project> {
         // there must be a default configuration or other projects cannot depend on this one
         project.configurations.maybeCreate( 'default' )
 
-        project.configurations.create 'ceylonCompile'
-        project.configurations.create 'ceylonRuntime'
+        def compileConfig = project.configurations.create 'ceylonCompile'
+        project.configurations.create( 'ceylonRuntime' ).extendsFrom compileConfig
     }
 
     private static createTasks( Project project, CeylonConfig config ) {
