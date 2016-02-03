@@ -5,7 +5,6 @@ import com.athaydes.gradle.ceylon.parse.CeylonModuleParser
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
@@ -52,8 +51,6 @@ class ResolveCeylonDependenciesTask {
         project.configurations*.resolve()
 
         def dependencyTree = dependencyTreeOf( project, moduleDeclaration )
-
-        checkForProblems dependencyTree
 
         log.info( 'No dependency problems found!' )
 
@@ -103,23 +100,6 @@ class ResolveCeylonDependenciesTask {
 
     private static Map parse( String name, String moduleText ) {
         new CeylonModuleParser().parse( name, moduleText )
-    }
-
-    private static void checkForProblems( DependencyTree dependencyTree ) {
-        def unresolvedTransDeps = ( DependencyTree
-                .transitiveDependenciesOf( dependencyTree.resolvedDependencies )
-                .findAll { it instanceof UnresolvedDependencyResult }
-                as Set<UnresolvedDependencyResult> )
-
-        def problems = dependencyTree.unresolvedDependencies + unresolvedTransDeps
-
-        if ( problems ) {
-            def problemDescription = problems.collect {
-                "  * ${it.attempted.displayName} (${it.attemptedReason.description})"
-            }.join( '\n' )
-            log.error "Unable to resolve the following dependencies:\n" + problemDescription
-            throw new GradleException( 'Module has unresolved dependencies' )
-        }
     }
 
 }
