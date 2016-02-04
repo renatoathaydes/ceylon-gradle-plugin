@@ -47,3 +47,10 @@ Remember to undo it later to avoid issues with the Ceylon runtime:
 ```
 mv repo/org/slf4j/simple_ repo/org/slf4j/simple
 ```
+
+### Killing the server
+
+Unfortunately, pressing Ctrl+C is not enough to kill the Spring Boot server (Tomcat under the hood).
+
+Follow the advices on [this StackOverflow](http://stackoverflow.com/questions/23432651/terminating-mvn-spring-bootrun-doesnt-stop-tomcat)
+question to kill the process.
