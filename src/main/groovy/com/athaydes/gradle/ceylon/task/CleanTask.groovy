@@ -7,7 +7,9 @@ class CleanTask {
 
     static List inputs( Project project, CeylonConfig config ) {
         GenerateOverridesFileTask.outputs( project, config ) +
-                CompileCeylonTask.outputs( project, config )
+                CompileCeylonTask.outputs( project, config ) +
+                CreateDependenciesPomsTask.outputs( project, config ) +
+                CreateMavenRepoTask.outputs( project, config )
     }
 
 }
