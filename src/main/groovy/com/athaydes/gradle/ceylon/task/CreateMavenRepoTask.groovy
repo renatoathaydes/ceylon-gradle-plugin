@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import com.athaydes.gradle.ceylon.util.MavenSettingsFileCreator
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ResolvedDependency
 
@@ -9,6 +10,8 @@ class CreateMavenRepoTask {
 
     static void run( Project project, CeylonConfig config ) {
         def rootDir = project.file( config.output )
+
+        MavenSettingsFileCreator.createMavenSettingsFile project, config
 
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
