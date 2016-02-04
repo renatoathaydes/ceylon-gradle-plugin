@@ -9,8 +9,12 @@ class MavenSettingsFileCreator {
 
     static final Logger log = Logging.getLogger( MavenSettingsFileCreator )
 
+    static File mavenSettingsFile( Project project, CeylonConfig config ) {
+        project.file( config.mavenSettings )
+    }
+
     static File createMavenSettingsFile( Project project, CeylonConfig config ) {
-        def settingsFile = project.file( config.mavenSettings )
+        def settingsFile = mavenSettingsFile project, config
 
         // do not overwrite file if already there
         if ( settingsFile.exists() ) {

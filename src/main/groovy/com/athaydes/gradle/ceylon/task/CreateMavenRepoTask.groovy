@@ -8,8 +8,19 @@ import org.gradle.api.artifacts.ResolvedDependency
 
 class CreateMavenRepoTask {
 
+    static inputs( Project project, CeylonConfig config ) {
+        ResolveCeylonDependenciesTask.inputs( project, config )
+    }
+
+    static outputs( Project project, CeylonConfig config ) {
+        { ->
+            [ MavenSettingsFileCreator.mavenSettingsFile( project, config ),
+              rootDir( project, config ) ]
+        }
+    }
+
     static void run( Project project, CeylonConfig config ) {
-        def rootDir = project.file( config.output )
+        def rootDir = rootDir project, config
 
         MavenSettingsFileCreator.createMavenSettingsFile project, config
 
@@ -19,8 +30,12 @@ class CreateMavenRepoTask {
         dependencyTree.allDependencies.each { dependency ->
             def destinationDir = destinationFor dependency, rootDir
             copyDependency dependency, project, destinationDir
-            movePom dependency, project, destinationDir
+            copyPom dependency, project, destinationDir
         }
+    }
+
+    private static File rootDir( Project project, CeylonConfig config ) {
+        project.file config.output
     }
 
     private static File destinationFor( ResolvedDependency dependency, File rootDir ) {
@@ -37,9 +52,12 @@ class CreateMavenRepoTask {
         }
     }
 
-    private static void movePom( ResolvedDependency dependency, Project project, File destinationDir ) {
+    private static void copyPom( ResolvedDependency dependency, Project project, File destinationDir ) {
         def pom = CreateDependenciesPomsTask.pomTempLocation( dependency, project )
-        pom.renameTo( new File( destinationDir, pom.name ) )
+        project.copy {
+            from pom
+            into destinationDir
+        }
     }
 
 }

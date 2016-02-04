@@ -60,32 +60,38 @@ class CeylonPlugin implements Plugin<Project> {
         generateOverridesFile.inputs.files GenerateOverridesFileTask.inputs( project, config )
         generateOverridesFile.outputs.files GenerateOverridesFileTask.outputs( project, config )
 
-        project.task(
+        Task createDependenciesPomsTask = project.task(
                 dependsOn: 'resolveCeylonDependencies',
                 description: '',
                 'createDependenciesPoms' ) << {
             CreateDependenciesPomsTask.run( project, config )
         }
 
-        project.task(
+        createDependenciesPomsTask.inputs.files( CreateDependenciesPomsTask.inputs( project, config ) )
+        createDependenciesPomsTask.outputs.files( CreateDependenciesPomsTask.outputs( project, config ) )
+
+        Task createMavenRepoTask = project.task(
                 dependsOn: 'createDependenciesPoms',
                 description: '',
                 'createMavenRepo' ) << {
             CreateMavenRepoTask.run( project, config )
         }
 
+        createMavenRepoTask.inputs.files( CreateMavenRepoTask.inputs( project, config ) )
+        createMavenRepoTask.outputs.files( CreateMavenRepoTask.outputs( project, config ) )
+
         Task importJarsTask = project.task(
                 dependsOn: 'resolveCeylonDependencies',
                 description: 'Import transitive dependencies into the Ceylon local repository if needed.',
                 'importJars' ) << {
-            // ImportJarsTask.run( project, config )
+            ImportJarsTask.run( project, config )
         }
 
         importJarsTask.inputs.files( ImportJarsTask.inputs( project, config ) )
         importJarsTask.outputs.files( ImportJarsTask.outputs( project, config ) )
 
         Task compileTask = project.task(
-                dependsOn: [ 'generateOverridesFile', 'importJars' ],
+                dependsOn: [ 'generateOverridesFile', 'importJars', 'createMavenRepo' ],
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylon' ) << {

@@ -8,6 +8,16 @@ import org.gradle.api.artifacts.ResolvedDependency
 
 class CreateDependenciesPomsTask {
 
+    static inputs( Project project, CeylonConfig config ) {
+        ResolveCeylonDependenciesTask.inputs( project, config )
+    }
+
+    static outputs( Project project, CeylonConfig config ) {
+        { ->
+            [ rootDir( project ) ]
+        }
+    }
+
     static void run( Project project, CeylonConfig config ) {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
@@ -23,8 +33,12 @@ class CreateDependenciesPomsTask {
         }
     }
 
+    static File rootDir( Project project ) {
+        new File( project.buildDir, 'dependency-poms' )
+    }
+
     static File pomTempLocation( ResolvedDependency dependency, Project project ) {
-        def destinationDir = new File( project.buildDir, 'dependency-poms' )
+        def destinationDir = rootDir project
         new File( destinationDir, "${dependency.moduleName}-${dependency.moduleVersion}.pom" )
     }
 
