@@ -15,7 +15,7 @@ class ResolveCeylonDependenciesTask {
 
     static List inputs( Project project, CeylonConfig config ) {
         // lazily-evaluated elements
-        [ { moduleFile( project, config ) }, { project.buildFile } ]
+        [ { moduleFile( project, config ) }, { project.allprojects*.buildFile } ]
     }
 
     static def run( Project project, CeylonConfig config ) {
