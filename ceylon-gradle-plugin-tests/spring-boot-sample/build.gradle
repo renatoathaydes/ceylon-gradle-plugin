@@ -12,3 +12,9 @@ ceylon {
     module = "com.athaydes.springboot"
     flatClassPath = true
 }
+
+dependencies {
+    ceylonCompile "org.springframework.boot:spring-boot-starter-web:1.3.0.RELEASE", {
+        exclude group: "ch.qos.logback"
+    }
+}

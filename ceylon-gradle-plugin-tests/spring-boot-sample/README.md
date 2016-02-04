@@ -18,10 +18,21 @@ Then hit `http://localhost:8080` with your browser. You should see the `Hello Wo
 
 ### Logging conflict issue
 
-SpringBoot uses logback by default... this conflicts with Ceylon's own logging library, `org.slf4j.simple`, causing
-SpringBoot to complain on startup.
+SpringBoot uses the Logback logging library by default...
+this conflicts with Ceylon's own logging library, `org.slf4j.simple`, causing SpringBoot to complain on startup.
 
-To fix this, the current solution is to remove `org.sfl4j.simple` from the Ceylon classpath. It's ugly but it works.
+To work around this issue, the Logback framework is explicitly excluded from the dependencies in the Gradle file:
+ 
+```groovy
+dependencies {
+    ceylonCompile "org.springframework.boot:spring-boot-starter-web:1.3.0.RELEASE", {
+        exclude group: "ch.qos.logback"
+    }
+}
+```
+
+If you, for any reason, must use Logback, the solution is to remove `org.sfl4j.simple` from the Ceylon classpath.
+It's ugly but it works.
 
 Find your Ceylon repo directory and type something like this:
 
