@@ -3,6 +3,7 @@ package com.athaydes.gradle.ceylon
 import com.athaydes.gradle.ceylon.task.CleanTask
 import com.athaydes.gradle.ceylon.task.CompileCeylonTask
 import com.athaydes.gradle.ceylon.task.CreateDependenciesPomsTask
+import com.athaydes.gradle.ceylon.task.CreateMavenRepoTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
 import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
@@ -66,11 +67,18 @@ class CeylonPlugin implements Plugin<Project> {
             CreateDependenciesPomsTask.run( project, config )
         }
 
+        project.task(
+                dependsOn: 'createDependenciesPoms',
+                description: '',
+                'createMavenRepo' ) << {
+            CreateMavenRepoTask.run( project, config )
+        }
+
         Task importJarsTask = project.task(
                 dependsOn: 'resolveCeylonDependencies',
                 description: 'Import transitive dependencies into the Ceylon local repository if needed.',
                 'importJars' ) << {
-            ImportJarsTask.run( project, config )
+            // ImportJarsTask.run( project, config )
         }
 
         importJarsTask.inputs.files( ImportJarsTask.inputs( project, config ) )

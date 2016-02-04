@@ -12,13 +12,14 @@ class DependencyTree {
 
     final String moduleName
     final String moduleVersion
+    final Collection<ResolvedDependency> allDependencies
 
     DependencyTree( Project project, Map moduleDeclaration ) {
         this.imports = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
         this.moduleName = moduleDeclaration.moduleName
         this.moduleVersion = moduleDeclaration.version
 
-        collectDependenciesOf project
+        allDependencies = collectDependenciesOf project
     }
 
     private Collection<ResolvedDependency> collectDependenciesOf( Project project ) {
@@ -66,6 +67,12 @@ class DependencyTree {
     static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
         project.configurations.ceylonRuntime
                 .resolvedConfiguration.firstLevelModuleDependencies.collectEntries {
+            [ it.name, it ]
+        }.values()
+    }
+
+    static Collection<ResolvedDependency> directDependenciesOf( ResolvedDependency dependency ) {
+        dependency.children.collectEntries {
             [ it.name, it ]
         }.values()
     }
