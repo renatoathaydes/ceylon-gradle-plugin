@@ -1,6 +1,7 @@
 package com.athaydes.gradle.ceylon.util
 
 import com.athaydes.gradle.ceylon.CeylonConfig
+import com.athaydes.gradle.ceylon.task.CreateMavenRepoTask
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
@@ -24,6 +25,8 @@ class MavenSettingsFileCreator {
 
         log.info( "Creating Maven settings file for Ceylon" )
 
+        def mavenRepo = CreateMavenRepoTask.rootDir( project, config )
+
         settingsFile.parentFile.mkdirs()
 
         settingsFile << """\
@@ -31,7 +34,7 @@ class MavenSettingsFileCreator {
             |    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             |    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
             |                        http://maven.apache.org/xsd/settings-1.0.0.xsd">
-            |    <localRepository>${project.file( config.output ).absolutePath}</localRepository>
+            |    <localRepository>${mavenRepo.absolutePath}</localRepository>
             |    <offline>true</offline>
             |</settings>
             |""".stripMargin()

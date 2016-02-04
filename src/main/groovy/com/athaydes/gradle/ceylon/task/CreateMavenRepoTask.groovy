@@ -34,8 +34,8 @@ class CreateMavenRepoTask {
         }
     }
 
-    private static File rootDir( Project project, CeylonConfig config ) {
-        project.file config.output
+    static File rootDir( Project project, CeylonConfig config ) {
+        new File( project.buildDir, 'maven-repository' )
     }
 
     private static File destinationFor( ResolvedDependency dependency, File rootDir ) {
