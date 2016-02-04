@@ -33,7 +33,7 @@ class DependencyTree {
                 it.resolvedDependency = depsById[ id ]
             }
         }
-        depsById.values()
+        onlyJars depsById.values()
     }
 
     private static void collectDependencies( ResolvedDependency dependency,
@@ -45,11 +45,11 @@ class DependencyTree {
     static Collection<ResolvedDependency> transitiveDependenciesOf( ResolvedDependency dependency ) {
         def depsById = [ : ] as Map<String, ResolvedDependency>
         for ( child in dependency.children ) collectDependencies( child, depsById )
-        depsById.values()
+        onlyJars depsById.values()
     }
 
     Collection<ResolvedDependency> getModuleDeclaredDependencies() {
-        imports.findAll { it.resolvedDependency }.collect { it.resolvedDependency }
+        onlyJars imports.findAll { it.resolvedDependency }.collect { it.resolvedDependency }
     }
 
     boolean isShared( ResolvedDependency dependency ) {
@@ -65,16 +65,23 @@ class DependencyTree {
     }
 
     static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
-        project.configurations.ceylonRuntime
+        onlyJars project.configurations.ceylonRuntime
                 .resolvedConfiguration.firstLevelModuleDependencies.collectEntries {
             [ it.name, it ]
         }.values()
     }
 
     static Collection<ResolvedDependency> directDependenciesOf( ResolvedDependency dependency ) {
-        dependency.children.collectEntries {
+        onlyJars dependency.children.collectEntries {
             [ it.name, it ]
         }.values()
+    }
+
+    private static Collection<ResolvedDependency> onlyJars(
+            Collection<ResolvedDependency> dependencies ) {
+        dependencies.findAll { ResolvedDependency dep ->
+            dep.moduleArtifacts.any { it.type == 'jar' }
+        }
     }
 
 }
