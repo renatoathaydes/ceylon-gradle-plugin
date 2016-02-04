@@ -14,7 +14,7 @@ public class MyJavaClass {
         return message;
     }
 
-    public String getMessagePaddedLeft(int minLength, char padChar) {
+    public String getPaddedMessage(int minLength, char padChar) {
         return Strings.padStart(message, minLength, padChar);
     }
 
