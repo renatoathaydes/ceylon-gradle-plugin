@@ -77,6 +77,9 @@ class CeylonPlugin implements Plugin<Project> {
             CreateMavenRepoTask.run( project, config )
         }
 
+        project.rootProject.getTasksByName( 'jar', true ).each { jar ->
+            createMavenRepoTask.dependsOn jar
+        }
         createMavenRepoTask.inputs.files( CreateMavenRepoTask.inputs( project, config ) )
         createMavenRepoTask.outputs.files( CreateMavenRepoTask.outputs( project, config ) )
 
