@@ -5,7 +5,7 @@ import org.gradle.api.artifacts.ResolvedDependency
 
 class MavenPomCreator {
 
-    static void createJarFor( ResolvedDependency dependency, Writer writer ) {
+    static void createPomFor( ResolvedDependency dependency, Writer writer ) {
         new MarkupBuilder( writer ).with { xml ->
             xml.mkp.xmlDeclaration( version: "1.0", encoding: "UTF-8" )
 

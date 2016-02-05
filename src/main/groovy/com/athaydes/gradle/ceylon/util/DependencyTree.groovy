@@ -65,6 +65,7 @@ class DependencyTree {
     }
 
     static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
+        if (!project.configurations.findByName( 'ceylonRuntime' )) return []
         onlyJars project.configurations.ceylonRuntime
                 .resolvedConfiguration.firstLevelModuleDependencies.collectEntries {
             [ it.name, it ]

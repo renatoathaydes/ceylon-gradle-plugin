@@ -28,7 +28,7 @@ class CreateDependenciesPomsTask {
                 pom.parentFile.mkdirs()
             }
             pom.withWriter { writer ->
-                MavenPomCreator.createJarFor( dependency, writer )
+                MavenPomCreator.createPomFor( dependency, writer )
             }
         }
     }
