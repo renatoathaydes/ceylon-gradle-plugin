@@ -20,13 +20,19 @@ class GenerateOverridesFileTask {
 
     static List outputs( Project project, CeylonConfig config ) {
         // lazily-evaluated elements
-        [ { project.file( config.overrides ) } ]
+        [ { overridesFile( project, config ) } ]
     }
 
     static void run( Project project, CeylonConfig config ) {
-        def overridesFile = project.file( config.overrides )
+        def overridesFile = overridesFile( project, config )
         def moduleExclusions = processedModuleExclusions config.moduleExclusions
         generateOverridesFile( project, overridesFile, moduleExclusions )
+    }
+
+    static File overridesFile( Project project, CeylonConfig config ) {
+        config.overrides ?
+                project.file( config.overrides ) :
+                new File( project.buildDir, "overrides.xml" )
     }
 
     static List<Map> processedModuleExclusions( List moduleExclusions ) {

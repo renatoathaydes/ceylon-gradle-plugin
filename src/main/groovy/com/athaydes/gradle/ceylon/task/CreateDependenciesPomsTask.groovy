@@ -22,7 +22,7 @@ class CreateDependenciesPomsTask {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
-        for ( dependency in dependencyTree.allDependencies ) {
+        for ( dependency in dependencyTree.jarDependencies ) {
             def pom = pomTempLocation dependency, project
             if ( !pom.parentFile.exists() ) {
                 pom.parentFile.mkdirs()

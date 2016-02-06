@@ -1,4 +1,4 @@
-package com.athaydes.java_module;
+package com.athaydes.ceylon_gradle_plugin.java_module;
 
 import com.google.common.base.Strings;
 

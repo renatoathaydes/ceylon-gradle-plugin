@@ -1,6 +1,7 @@
 package com.athaydes.gradle.ceylon.util
 
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolvedDependency
 
 /**
@@ -12,19 +13,21 @@ class DependencyTree {
 
     final String moduleName
     final String moduleVersion
-    final Collection<ResolvedDependency> allDependencies
+    final Collection<ResolvedDependency> jarDependencies
+    final Collection<Project> ceylonDependencies
 
     DependencyTree( Project project, Map moduleDeclaration ) {
         this.imports = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
         this.moduleName = moduleDeclaration.moduleName
         this.moduleVersion = moduleDeclaration.version
 
-        allDependencies = collectDependenciesOf project
+        jarDependencies = collectDependenciesOf project
+        ceylonDependencies = directCeylonDependenciesOf project
     }
 
     private Collection<ResolvedDependency> collectDependenciesOf( Project project ) {
         def depsById = [ : ] as Map<String, ResolvedDependency>
-        for ( dependency in directDependenciesOf( project ) ) {
+        for ( dependency in directJarDependenciesOf( project ) ) {
             collectDependencies( dependency, depsById )
         }
         imports.each {
@@ -64,9 +67,19 @@ class DependencyTree {
         }
     }
 
+    static Collection<ResolvedDependency> directJarDependenciesOf( Project project ) {
+        onlyJars directDependenciesOf( project )
+    }
+
+    static Collection<Project> directCeylonDependenciesOf( Project project ) {
+        if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
+        project.configurations.ceylonRuntime.allDependencies
+                .withType( ProjectDependency )*.dependencyProject
+    }
+
     static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
-        if (!project.configurations.findByName( 'ceylonRuntime' )) return []
-        onlyJars project.configurations.ceylonRuntime
+        if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
+        project.configurations.ceylonRuntime
                 .resolvedConfiguration.firstLevelModuleDependencies.collectEntries {
             [ it.name, it ]
         }.values()

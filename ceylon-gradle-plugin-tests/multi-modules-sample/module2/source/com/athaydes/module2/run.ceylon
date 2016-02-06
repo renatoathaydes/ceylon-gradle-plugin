@@ -1,5 +1,5 @@
 import com.athaydes.module1 { ... }
-import com.athaydes.java_module { MyJavaClass }
+import com.athaydes.ceylon_gradle_plugin.java_module { MyJavaClass }
 
 shared void run() {
     print("Module2 running...");

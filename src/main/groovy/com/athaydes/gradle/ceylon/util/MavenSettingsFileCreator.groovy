@@ -11,7 +11,9 @@ class MavenSettingsFileCreator {
     static final Logger log = Logging.getLogger( MavenSettingsFileCreator )
 
     static File mavenSettingsFile( Project project, CeylonConfig config ) {
-        project.file( config.mavenSettings )
+        config.mavenSettings ?
+                project.file( config.mavenSettings ) :
+                new File( project.buildDir, 'maven-settings.xml' )
     }
 
     static File createMavenSettingsFile( Project project, CeylonConfig config ) {

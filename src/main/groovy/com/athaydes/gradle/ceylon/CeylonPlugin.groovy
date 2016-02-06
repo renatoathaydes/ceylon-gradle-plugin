@@ -95,7 +95,7 @@ class CeylonPlugin implements Plugin<Project> {
         createMavenRepoTask.outputs.files( CreateMavenRepoTask.outputs( project, config ) )
 
         Task importJarsTask = project.task(
-                dependsOn: 'resolveCeylonDependencies',
+                dependsOn: [ 'resolveCeylonDependencies', 'createMavenRepo', 'createModuleDescriptors' ],
                 description: 'Import transitive dependencies into the Ceylon local repository if needed.',
                 'importJars' ) << {
             ImportJarsTask.run( project, config )

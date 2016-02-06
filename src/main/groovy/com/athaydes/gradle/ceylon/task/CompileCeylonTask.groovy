@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonRunner
+import com.athaydes.gradle.ceylon.util.MavenSettingsFileCreator
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
@@ -61,7 +62,7 @@ class CompileCeylonTask {
 
     private static String getOptions( String ceylonDirective, Project project, CeylonConfig config ) {
         def options = [ ]
-        def overrides = project.file( config.overrides )
+        def overrides = GenerateOverridesFileTask.overridesFile( project, config )
         if ( overrides.exists() ) {
             options << "--overrides ${overrides.absolutePath}"
         } else {
@@ -72,7 +73,7 @@ class CompileCeylonTask {
             options << '--flat-classpath'
         }
 
-        options << "--rep=aether:${project.file( config.mavenSettings ).absolutePath}" <<
+        options << "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}" <<
                 "--rep=${project.file( config.output ).absolutePath}"
 
         switch ( ceylonDirective ) {

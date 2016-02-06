@@ -21,7 +21,7 @@ class CreateModuleDescriptorsTask {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
-        for ( dependency in dependencyTree.allDependencies ) {
+        for ( dependency in dependencyTree.jarDependencies ) {
             def descriptor = descriptorTempLocation dependency, project
             if ( !descriptor.parentFile.exists() ) {
                 descriptor.parentFile.mkdirs()
@@ -38,7 +38,9 @@ class CreateModuleDescriptorsTask {
 
     static File descriptorTempLocation( ResolvedDependency dependency, Project project ) {
         def destinationDir = rootDir project
-        new File( destinationDir, "${dependency.moduleName}-${dependency.moduleVersion}.properties" )
+        def fileName = "${dependency.moduleName}-${dependency.moduleVersion}.properties"
+                .replace( '-', '_' )
+        new File( destinationDir, fileName )
     }
 
 }

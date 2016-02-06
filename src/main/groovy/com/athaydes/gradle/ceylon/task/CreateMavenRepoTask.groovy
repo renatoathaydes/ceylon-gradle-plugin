@@ -27,7 +27,7 @@ class CreateMavenRepoTask {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
-        dependencyTree.allDependencies.each { dependency ->
+        dependencyTree.jarDependencies.each { dependency ->
             def destinationDir = destinationFor dependency, rootDir
             copyDependency dependency, project, destinationDir
             copyPom dependency, project, destinationDir
