@@ -11,6 +11,10 @@ repositories {
 ceylon {
     module = "com.athaydes.springboot"
     flatClassPath = true
+
+    // lots of optional dependencies in Spring,
+    // so attempting to import the jars into the Ceylon repo is futile
+    noJarImports = true
 }
 
 dependencies {
