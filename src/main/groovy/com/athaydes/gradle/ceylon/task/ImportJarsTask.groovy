@@ -37,12 +37,17 @@ class ImportJarsTask {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
-        CeylonRunner.withCeylon( config ) { String ceylon ->
-            log.info "Importing Jar dependencies"
-            for ( jarDependency in dependencyTree.jarDependencies ) {
-                importDependency project, ceylon, repo, jarDependency, config
+        if ( config.noJarImports ) {
+            log.info( "Skipping Jar imports" )
+        } else {
+            CeylonRunner.withCeylon( config ) { String ceylon ->
+                log.info "Importing Jar dependencies"
+                for ( jarDependency in dependencyTree.jarDependencies ) {
+                    importDependency project, ceylon, repo, jarDependency, config
+                }
             }
         }
+
         log.info "Importing Ceylon dependencies"
         for ( ceylonDependency in dependencyTree.ceylonDependencies ) {
             importCeylonProject project, repo, ceylonDependency
@@ -123,8 +128,8 @@ class ImportJarsTask {
                                    CeylonConfig config ) {
         def command = "${ceylon} import-jar " +
                 "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath} " +
-                "${config.verbose ? '--verbose' : ' '}" +
-                "${config.forceImports ? '--force' : ' '}" +
+                "${config.verbose ? '--verbose ' : ' '}" +
+                "${config.forceImports ? '--force ' : ' '}" +
                 "--descriptor=${moduleDescriptor.absolutePath} " +
                 "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath} "
 
