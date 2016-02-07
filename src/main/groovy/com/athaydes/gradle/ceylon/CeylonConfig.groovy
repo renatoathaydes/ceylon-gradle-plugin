@@ -13,7 +13,7 @@ class CeylonConfig {
     String overrides
     String mavenSettings
     Boolean flatClasspath = true
-    Boolean importJars = true
+    Boolean importJars = false
     Boolean forceImports = false
     Boolean verbose = false
 
