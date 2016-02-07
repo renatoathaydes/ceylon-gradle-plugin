@@ -33,11 +33,11 @@ class CeylonRunner {
     }
 
     static void run( String ceylonDirective, String module, Project project, CeylonConfig config,
-                     List<String> options ) {
+                     List<String> options, List<String> finalArgs = [] ) {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
         withCeylon( config ) { String ceylon ->
-            def command = "${ceylon} ${ceylonDirective} ${options.join( ' ' )} ${module}"
+            def command = "${ceylon} ${ceylonDirective} ${options.join( ' ' )} ${module} ${finalArgs.join( ' ' )}"
             log.info( "Running command: $command" )
             def process = command.execute( [ ], project.file( '.' ) )
 

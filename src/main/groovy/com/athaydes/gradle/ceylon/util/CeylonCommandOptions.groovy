@@ -19,21 +19,26 @@ class CeylonCommandOptions {
             log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
         }
 
-        if ( config.flatClassPath ) {
+        if ( config.flatClasspath ) {
             options << '--flat-classpath'
         }
 
-        options << "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}" <<
-                "--rep=${project.file( config.output ).absolutePath}"
+        return options + getRepositoryOptions( project, config )
+    }
 
-        return options
+    private static List getRepositoryOptions( Project project, CeylonConfig config ) {
+        [ "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}",
+          "--rep=${project.file( config.output ).absolutePath}" ]
+    }
+
+    private static File getOut( Project project, CeylonConfig config ) {
+        project.file( config.output )
     }
 
     static List getCompileOptions( Project project, CeylonConfig config ) {
         def options = [ ]
 
-        def output = project.file( config.output )
-        options << "--out=${output.absolutePath}"
+        options << "--out=${getOut( project, config ).absolutePath}"
 
         config.sourceRoots.each { options << "--source $it" }
         config.resourceRoots.each { options << "--resource $it" }
@@ -49,6 +54,14 @@ class CeylonCommandOptions {
     static List getTestOptions( Project project, CeylonConfig config ) {
         // no specific run options yet
         getCommonOptions( project, config )
+    }
+
+    static List getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {
+        [ "${config.verbose ? '--verbose ' : ' '}",
+          "${config.forceImports ? '--force ' : ' '}",
+          "--descriptor=${moduleDescriptor.absolutePath} ",
+          "--out=${getOut( project, config ).absolutePath}" ] +
+                getRepositoryOptions( project, config )
     }
 
 }

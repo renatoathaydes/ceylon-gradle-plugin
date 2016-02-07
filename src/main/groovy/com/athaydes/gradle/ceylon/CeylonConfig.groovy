@@ -12,8 +12,8 @@ class CeylonConfig {
     List moduleExclusions = [ ]
     String overrides
     String mavenSettings
-    Boolean flatClassPath = true
-    Boolean noJarImports = true
+    Boolean flatClasspath = true
+    Boolean importJars = true
     Boolean forceImports = false
     Boolean verbose = false
 

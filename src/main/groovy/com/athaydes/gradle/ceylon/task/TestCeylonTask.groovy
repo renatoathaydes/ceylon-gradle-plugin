@@ -22,7 +22,7 @@ class TestCeylonTask {
                     CeylonCommandOptions.getCompileOptions( project, config )
         }
 
-        CeylonRunner.run 'test', config.module, project, config,
+        CeylonRunner.run 'test', config.testModule, project, config,
                 CeylonCommandOptions.getTestOptions( project, config )
     }
 }

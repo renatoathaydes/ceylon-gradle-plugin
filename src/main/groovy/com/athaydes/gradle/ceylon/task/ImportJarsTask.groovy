@@ -1,9 +1,9 @@
 package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
+import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
 import com.athaydes.gradle.ceylon.util.DependencyTree
-import com.athaydes.gradle.ceylon.util.MavenSettingsFileCreator
 import org.gradle.api.GradleException
 import org.gradle.api.Nullable
 import org.gradle.api.Project
@@ -37,15 +37,13 @@ class ImportJarsTask {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 
-        if ( config.noJarImports ) {
-            log.info( "Skipping Jar imports" )
-        } else {
-            CeylonRunner.withCeylon( config ) { String ceylon ->
-                log.info "Importing Jar dependencies"
-                for ( jarDependency in dependencyTree.jarDependencies ) {
-                    importDependency project, ceylon, repo, jarDependency, config
-                }
+        if ( config.importJars ) {
+            log.info "Importing Jar dependencies"
+            for ( jarDependency in dependencyTree.jarDependencies ) {
+                importDependency project, jarDependency, config
             }
+        } else {
+            log.info( "Skipping Jar imports" )
         }
 
         log.info "Importing Ceylon dependencies"
@@ -74,12 +72,13 @@ class ImportJarsTask {
         }
     }
 
-    private static void importDependency( Project project, String ceylon,
-                                          File repo, ResolvedDependency dependency, CeylonConfig config ) {
+    private static void importDependency( Project project,
+                                          ResolvedDependency dependency,
+                                          CeylonConfig config ) {
         def artifact = dependency.allModuleArtifacts.find { it.type == 'jar' }
         if ( artifact ) {
             if ( artifact.name == dependency.moduleName ) {
-                importArtifact project, ceylon, repo, dependency, artifact, config
+                importArtifact project, dependency, artifact, config
             } else {
                 log.warn( "Unable to install dependency. Module name '{}' != Artifact name '{}",
                         dependency.moduleName, artifact.name )
@@ -89,8 +88,7 @@ class ImportJarsTask {
         }
     }
 
-    private static void importArtifact( Project project, String ceylon,
-                                        File repo, ResolvedDependency dependency,
+    private static void importArtifact( Project project, ResolvedDependency dependency,
                                         ResolvedArtifact artifact, CeylonConfig config ) {
         log.info( "Will try to install {} into the Ceylon repository", artifact.name )
         def jarFile = artifact.file
@@ -105,7 +103,7 @@ class ImportJarsTask {
         def moduleDescriptor = CreateModuleDescriptorsTask.descriptorTempLocation( dependency, project )
 
         if ( jarFile?.exists() ) {
-            importJar jarFile, ceylon, repo, module, project, moduleDescriptor, config
+            importJar jarFile, module, project, moduleDescriptor, config
         } else {
             throw new GradleException( "Dependency ${module} could not be installed in the Ceylon Repository" +
                     " because its jarFile could not be located: ${jarFile}" )
@@ -123,22 +121,13 @@ class ImportJarsTask {
         }
     }
 
-    private static void importJar( File jarFile, String ceylon, File repo,
-                                   String module, Project project, File moduleDescriptor,
+    private static void importJar( File jarFile, String module, Project project, File moduleDescriptor,
                                    CeylonConfig config ) {
-        def command = "${ceylon} import-jar " +
-                "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath} " +
-                "${config.verbose ? '--verbose ' : ' '}" +
-                "${config.forceImports ? '--force ' : ' '}" +
-                "--descriptor=${moduleDescriptor.absolutePath} " +
-                "--out=${repo.absolutePath} ${module} ${jarFile.absolutePath} "
-
         log.debug( "Jar: {}, Module Name: {}", jarFile.name, module )
-        log.info "Running command: {}", command
 
-        def process = command.execute( [ ], project.file( '.' ) )
-
-        CeylonRunner.consumeOutputOf process
+        CeylonRunner.run( 'import-jar', module, project, config,
+                CeylonCommandOptions.getImportJarsOptions( project, config, moduleDescriptor ),
+                [ jarFile.absolutePath ] )
     }
 
 }
