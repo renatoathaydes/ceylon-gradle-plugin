@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon.util
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
@@ -28,6 +29,21 @@ class CeylonRunner {
         } catch ( e ) {
             throw new GradleException(
                     'Problem running the ceylon command. Run with --stacktrace for the cause.', e )
+        }
+    }
+
+    static void run( String ceylonDirective, String module, Project project, CeylonConfig config,
+                     List<String> options ) {
+        log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
+
+        withCeylon( config ) { String ceylon ->
+            def command = "${ceylon} ${ceylonDirective} ${options.join( ' ' )} ${module}"
+            log.info( "Running command: $command" )
+            def process = command.execute( [ ], project.file( '.' ) )
+
+            consumeOutputOf process
+
+            log.debug( "Ceylon process completed." )
         }
     }
 

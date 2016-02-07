@@ -8,6 +8,8 @@ import com.athaydes.gradle.ceylon.task.CreateModuleDescriptorsTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
 import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
+import com.athaydes.gradle.ceylon.task.RunCeylonTask
+import com.athaydes.gradle.ceylon.task.TestCeylonTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -109,7 +111,7 @@ class CeylonPlugin implements Plugin<Project> {
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylon' ) << {
-            CompileCeylonTask.compileCeylon( project, config )
+            CompileCeylonTask.run( project, config )
         }
 
         compileTask.inputs.files( CompileCeylonTask.inputs( project, config ) )
@@ -119,18 +121,18 @@ class CeylonPlugin implements Plugin<Project> {
                 dependsOn: 'compileCeylon',
                 description: 'Runs a Ceylon module.',
                 'runCeylon' ) << {
-            CompileCeylonTask.runCeylon( project, config )
+            RunCeylonTask.run( project, config )
         }
 
         Task testTask = project.task(
                 dependsOn: [ 'compileCeylon' ],
                 description: 'Runs all tests in a Ceylon module.',
                 'testCeylon' ) << {
-            CompileCeylonTask.testCeylon( project, config )
+            TestCeylonTask.run( project, config )
         }
 
-        testTask.inputs.files( CompileCeylonTask.testInputs( project, config ) )
-        testTask.outputs.files( [ ] )
+        testTask.inputs.files( TestCeylonTask.inputs( project, config ) )
+        testTask.outputs.files( TestCeylonTask.outputs( project, config ) )
 
         def cleanTask = project.task(
                 type: Delete,
