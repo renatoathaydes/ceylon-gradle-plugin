@@ -1,0 +1,22 @@
+apply plugin: 'kotlin'
+
+buildscript {
+    ext.kotlin_version = '1.0.0-beta-4584'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.0-beta-4583"
+    }
+}
+
+group 'com.athaydes.ceylon-gradle-plugin'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}

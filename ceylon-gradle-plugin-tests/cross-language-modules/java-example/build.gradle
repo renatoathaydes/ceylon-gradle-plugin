@@ -1,0 +1,8 @@
+apply plugin: 'java'
+
+group = 'com.athaydes.ceylon-gradle-plugin'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}

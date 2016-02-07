@@ -4,4 +4,8 @@ include 'log4j-sample',
         'module-with-tests-sample',
         'multi-modules-sample:module1',
         'multi-modules-sample:module2',
-        'multi-modules-sample:java-module'
+        'multi-modules-sample:java-module',
+        'cross-language-modules:ceylon-example',
+        'cross-language-modules:java-example',
+        'cross-language-modules:groovy-example',
+        'cross-language-modules:kotlin-example'
