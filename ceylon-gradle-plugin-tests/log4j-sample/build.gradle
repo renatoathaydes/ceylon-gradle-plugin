@@ -9,5 +9,5 @@ repositories {
 
 ceylon {
     module = "com.athaydes.maven"
-    flatClassPath = true
+    flatClasspath = true
 }

@@ -10,3 +10,6 @@ shared void run() {
 
     print("Hey, Java class, give me a padded message! ``paddedMessage``");
 }
+
+shared String getPaddedMessage(String message, Integer characterCount, Character paddingCharacter)
+    => MyJavaClass(message).getPaddedMessage(characterCount, paddingCharacter);

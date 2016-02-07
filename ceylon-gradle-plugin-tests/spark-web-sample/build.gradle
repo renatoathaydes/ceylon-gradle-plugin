@@ -16,6 +16,5 @@ dependencies {
 
 ceylon {
     module = "com.athaydes.sparkweb"
-    flatClassPath = true
-    forceImports = true // spark has optional dependencies so packages cannot be strictly checked by Ceylon
+    flatClasspath = true
 }

@@ -9,6 +9,9 @@ repositories {
 
 ceylon {
     module = 'com.athaydes.module2'
+    testModule = 'test.com.athaydes.module2'
+    importJars = true
+    flatClasspath = false
 }
 
 dependencies {
