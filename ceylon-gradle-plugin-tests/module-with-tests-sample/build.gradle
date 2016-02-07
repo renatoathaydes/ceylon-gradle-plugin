@@ -11,4 +11,5 @@ repositories {
 ceylon {
     module = "com.athaydes.simple"
     testModule = "test.com.athaydes.simple"
+    flatClasspath = false
 }
