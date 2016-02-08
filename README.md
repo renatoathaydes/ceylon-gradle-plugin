@@ -95,6 +95,17 @@ For even more output, use `--debug`.
 > Another useful task that Gradle itself adds by default is `dependencies`, which prints the whole
   dependency tree of your project.
 
+### Properties
+
+* `get-ceylon-command`: if the project has this property, any Ceylon commands that would have been called by this plugin
+  are simply printed to stdout instead of actually being called.
+  
+Example usage:
+
+```
+gradle -P get-ceylon-command runCeylon
+```
+
 ## Configuring the Ceylon build
 
 Most of the configuration of this plugin is done inside the `ceylon` block.
