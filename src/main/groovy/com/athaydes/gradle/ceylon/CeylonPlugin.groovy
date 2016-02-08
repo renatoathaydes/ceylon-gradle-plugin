@@ -42,6 +42,7 @@ class CeylonPlugin implements Plugin<Project> {
 
     private static createTasks( Project project, CeylonConfig config ) {
         Task resolveDepsTask = project.task(
+                group: 'Build tasks',
                 description: 'Resolves all legacy dependencies declared in the Ceylon' +
                         ' module file as well as directly in the Gradle build file.',
                 'resolveCeylonDependencies' ) << {
@@ -51,6 +52,7 @@ class CeylonPlugin implements Plugin<Project> {
         resolveDepsTask.inputs.files ResolveCeylonDependenciesTask.inputs( project, config )
 
         Task generateOverridesFile = project.task(
+                group: 'Build tasks',
                 dependsOn: 'resolveCeylonDependencies',
                 description: 'Generates the overrides.xml file based on the Gradle project dependencies.\n' +
                         ' All Java legacy dependencies declared in the Ceylon module file are checked so' +
@@ -64,8 +66,13 @@ class CeylonPlugin implements Plugin<Project> {
         generateOverridesFile.outputs.files GenerateOverridesFileTask.outputs( project, config )
 
         Task createDependenciesPomsTask = project.task(
+                group: 'Build tasks',
                 dependsOn: 'resolveCeylonDependencies',
-                description: '',
+                description: 'Creates Maven pom files for all transitive dependencies.\n' +
+                        'The transitive dependencies are resolved by Gradle, then for each dependency, a pom ' +
+                        'is created containing only its direct dependencies as reported by Gradle.\n' +
+                        'This allows Ceylon to import jars without considering optional Maven dependencies, ' +
+                        'for example, as Gradle does not resolve optional dependencies by default.',
                 'createDependenciesPoms' ) << {
             CreateDependenciesPomsTask.run( project, config )
         }
@@ -74,8 +81,12 @@ class CeylonPlugin implements Plugin<Project> {
         createDependenciesPomsTask.outputs.files( CreateDependenciesPomsTask.outputs( project, config ) )
 
         Task createModuleDescriptorsTask = project.task(
+                group: 'Build tasks',
                 dependsOn: 'resolveCeylonDependencies',
-                description: '',
+                description: 'Creates module descriptors (properties files) for all transitive dependencies.\n' +
+                        'The transitive dependencies are resolved by Gradle, then for each dependency, a module ' +
+                        'descriptor is created containing all its own transitive dependencies. The module descriptors ' +
+                        'are used when, and if, the dependencies Jar files get imported into the Ceylon repository.',
                 'createModuleDescriptors' ) << {
             CreateModuleDescriptorsTask.run( project, config )
         }
@@ -84,8 +95,12 @@ class CeylonPlugin implements Plugin<Project> {
         createModuleDescriptorsTask.outputs.files( CreateModuleDescriptorsTask.outputs( project, config ) )
 
         Task createMavenRepoTask = project.task(
+                group: 'Build tasks',
                 dependsOn: 'createDependenciesPoms',
-                description: '',
+                description: 'Creates a local Maven repository containing all transitive dependencies.\n' +
+                        'The repository uses the default Maven repository format and is used by all Ceylon commands ' +
+                        'so that Ceylon is not required to search for any Maven dependency in a remote repository, ' +
+                        'ensuring that Gradle is used as the main Maven dependency resolver.',
                 'createMavenRepo' ) << {
             CreateMavenRepoTask.run( project, config )
         }
@@ -97,8 +112,12 @@ class CeylonPlugin implements Plugin<Project> {
         createMavenRepoTask.outputs.files( CreateMavenRepoTask.outputs( project, config ) )
 
         Task importJarsTask = project.task(
+                group: 'Build tasks',
                 dependsOn: [ 'resolveCeylonDependencies', 'createMavenRepo', 'createModuleDescriptors' ],
-                description: 'Import transitive dependencies into the Ceylon local repository if needed.',
+                description: 'Import transitive Maven dependencies and copies the output from dependent Ceylon ' +
+                        'projects into the local Ceylon repository .\n' +
+                        'To enable importing Maven dependencies, the Ceylon config property "importJars" must ' +
+                        'be set to true.',
                 'importJars' ) << {
             ImportJarsTask.run( project, config )
         }
@@ -107,6 +126,7 @@ class CeylonPlugin implements Plugin<Project> {
         importJarsTask.outputs.files( ImportJarsTask.outputs( project, config ) )
 
         Task compileTask = project.task(
+                group: 'Build tasks',
                 dependsOn: [ 'generateOverridesFile', 'importJars', 'createMavenRepo' ],
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
@@ -118,6 +138,7 @@ class CeylonPlugin implements Plugin<Project> {
         compileTask.outputs.files( CompileCeylonTask.outputs( project, config ) )
 
         project.task(
+                group: 'Verification tasks',
                 dependsOn: 'compileCeylon',
                 description: 'Runs a Ceylon module.',
                 'runCeylon' ) << {
@@ -125,6 +146,7 @@ class CeylonPlugin implements Plugin<Project> {
         }
 
         Task testTask = project.task(
+                group: 'Verification tasks',
                 dependsOn: [ 'compileCeylon' ],
                 description: 'Runs all tests in a Ceylon module.',
                 'testCeylon' ) << {
