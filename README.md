@@ -14,6 +14,16 @@ to rely on Java (and Scala, Groovy, Kotlin)'s libraries!
 To use this plugin, simply add a Gradle build file to the root of your project
 and apply this plugin as shown below:
 
+* Gradle 2.1+
+
+```groovy
+plugins {
+    id 'com.athaydes.ceylon' version '1.1'
+}
+```
+
+* Old style Gradle plugin declaration
+
 *build.gradle*
 ```groovy
 buildscript {
@@ -22,7 +32,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.0"
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.1"
     }
 }
 
