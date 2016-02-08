@@ -16,5 +16,4 @@ dependencies {
 
 ceylon {
     module = "com.athaydes.sparkweb"
-    flatClassPath = true
 }

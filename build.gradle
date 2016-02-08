@@ -2,10 +2,11 @@ plugins {
     id "com.jfrog.bintray" version "1.4"
     id 'maven-publish'
     id 'groovy'
+    id 'com.gradle.plugin-publish' version '0.9.3'
 }
 
 group 'com.athaydes.gradle.ceylon'
-version '1.0'
+version '1.1'
 sourceCompatibility = 1.7
 
 repositories {
@@ -30,6 +31,22 @@ publishing {
         mavenJava( MavenPublication ) {
             from components.java
             artifact sourcesJar
+        }
+    }
+}
+
+// Gradle Plugin Repository
+
+pluginBundle {
+    website = 'https://github.com/renatoathaydes/ceylon-gradle-plugin'
+    vcsUrl = 'https://github.com/renatoathaydes/ceylon-gradle-plugin'
+    description = 'A simple Gradle plugin to manage Ceylon projects'
+    tags = ['ceylon', 'language']
+
+    plugins {
+        ceylonPlugin {
+            id = 'com.athaydes.ceylon'
+            displayName = 'Ceylon Gradle Plugin'
         }
     }
 }

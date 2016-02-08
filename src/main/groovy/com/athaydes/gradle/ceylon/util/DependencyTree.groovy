@@ -1,63 +1,101 @@
 package com.athaydes.gradle.ceylon.util
 
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.result.DependencyResult
-import org.gradle.api.artifacts.result.ResolvedComponentResult
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.api.Project
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.ResolvedDependency
 
 /**
  * Tree of dependencies. The root of the tree will contain all project dependencies.
  */
 class DependencyTree {
 
-    private final ResolvedComponentResult node
     private final Collection<Map> imports
 
     final String moduleName
     final String moduleVersion
+    final Collection<ResolvedDependency> jarDependencies
+    final Collection<Project> ceylonDependencies
 
-    DependencyTree( ResolvedComponentResult node, Map moduleDeclaration ) {
-        this.node = node
+    DependencyTree( Project project, Map moduleDeclaration ) {
         this.imports = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
         this.moduleName = moduleDeclaration.moduleName
         this.moduleVersion = moduleDeclaration.version
+
+        jarDependencies = collectDependenciesOf project
+        ceylonDependencies = directCeylonDependenciesOf project
     }
 
-    Set<ResolvedDependencyResult> getResolvedDependencies() {
-        node.dependencies.findAll {
-            it instanceof ResolvedDependencyResult
-        } as Set<ResolvedDependencyResult>
+    private Collection<ResolvedDependency> collectDependenciesOf( Project project ) {
+        def depsById = [ : ] as Map<String, ResolvedDependency>
+        for ( dependency in directJarDependenciesOf( project ) ) {
+            collectDependencies( dependency, depsById )
+        }
+        imports.each {
+            def id = "${it.name}:${it.version}".toString()
+            if ( depsById.containsKey( id ) ) {
+                it.resolvedDependency = depsById[ id ]
+            }
+        }
+        onlyJars depsById.values()
     }
 
-    Set<UnresolvedDependencyResult> getUnresolvedDependencies() {
-        node.dependencies.findAll {
-            it instanceof UnresolvedDependencyResult
-        } as Set<UnresolvedDependencyResult>
+    private static void collectDependencies( ResolvedDependency dependency,
+                                             Map<String, ResolvedDependency> depById ) {
+        depById[ dependency.name ] = dependency
+        for ( child in dependency.children ) collectDependencies( child, depById )
     }
 
-    boolean isShared( ModuleComponentIdentifier id ) {
-        def dependency = moduleDeclaration( id )
-        return dependency?.shared
+    static Collection<ResolvedDependency> transitiveDependenciesOf( ResolvedDependency dependency ) {
+        def depsById = [ : ] as Map<String, ResolvedDependency>
+        for ( child in dependency.children ) collectDependencies( child, depsById )
+        onlyJars depsById.values()
     }
 
-    private Map moduleDeclaration( ModuleComponentIdentifier id ) {
+    Collection<ResolvedDependency> getModuleDeclaredDependencies() {
+        onlyJars imports.findAll { it.resolvedDependency }.collect { it.resolvedDependency }
+    }
+
+    boolean isShared( ResolvedDependency dependency ) {
+        def module = moduleDeclaration( dependency )
+        return module?.shared
+    }
+
+    private Map moduleDeclaration( ResolvedDependency dependency ) {
         imports.find {
-            it.name == "${id.group}:${id.module}" && it.version == id.version
+            it.name == "${dependency.moduleGroup}:${dependency.moduleName}" &&
+                    it.version == dependency.moduleVersion
         }
     }
 
-    static Set<DependencyResult> transitiveDependenciesOf(
-            ResolvedDependencyResult dependencyResult ) {
-        dependencyResult.selected.dependencies.collectMany { it ->
-            [ it ] + ( it instanceof ResolvedDependencyResult ?
-                    transitiveDependenciesOf( it ) : [ ] )
-        }
+    static Collection<ResolvedDependency> directJarDependenciesOf( Project project ) {
+        onlyJars directDependenciesOf( project )
     }
 
-    static Set<DependencyResult> transitiveDependenciesOf(
-            Collection<? extends ResolvedDependencyResult> dependencies ) {
-        dependencies.collectMany { transitiveDependenciesOf( it ) }
+    static Collection<Project> directCeylonDependenciesOf( Project project ) {
+        if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
+        project.configurations.ceylonRuntime.allDependencies
+                .withType( ProjectDependency )*.dependencyProject
+    }
+
+    static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
+        if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
+        project.configurations.ceylonRuntime
+                .resolvedConfiguration.firstLevelModuleDependencies.collectEntries {
+            [ it.name, it ]
+        }.values()
+    }
+
+    static Collection<ResolvedDependency> directDependenciesOf( ResolvedDependency dependency ) {
+        onlyJars dependency.children.collectEntries {
+            [ it.name, it ]
+        }.values()
+    }
+
+    private static Collection<ResolvedDependency> onlyJars(
+            Collection<ResolvedDependency> dependencies ) {
+        dependencies.findAll { ResolvedDependency dep ->
+            dep.moduleArtifacts.any { it.type == 'jar' }
+        }
     }
 
 }

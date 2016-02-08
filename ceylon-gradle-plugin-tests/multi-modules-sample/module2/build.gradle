@@ -1,0 +1,20 @@
+apply plugin: 'com.athaydes.ceylon'
+
+group = 'com.athaydes.ceylon-gradle-plugin'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+ceylon {
+    module = 'com.athaydes.module2'
+    testModule = 'test.com.athaydes.module2'
+    importJars = true
+    flatClasspath = false
+}
+
+dependencies {
+    ceylonCompile project( ':multi-modules-sample:module1' )
+    ceylonCompile project( ':multi-modules-sample:java-module' )
+}

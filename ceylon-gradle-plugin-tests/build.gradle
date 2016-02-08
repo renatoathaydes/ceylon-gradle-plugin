@@ -2,13 +2,13 @@ subprojects {
     buildscript {
         repositories {
             flatDir {
-                dirs file( '../../build/libs' )
+                dirs rootProject.file( '../build/libs' )
             }
             jcenter()
         }
 
         dependencies {
-            classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.0"
+            classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.1"
         }
     }
 }

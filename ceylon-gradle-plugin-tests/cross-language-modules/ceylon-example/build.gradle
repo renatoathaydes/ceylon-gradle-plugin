@@ -1,0 +1,18 @@
+apply plugin: 'com.athaydes.ceylon'
+
+group = 'com.athaydes.ceylon-gradle-plugin'
+version = '1.0'
+
+repositories {
+    jcenter()
+}
+
+ceylon {
+    module = 'com.athaydes.ceylon_example'
+}
+
+dependencies {
+    ceylonCompile project( ':cross-language-modules:java-example' )
+    ceylonCompile project( ':cross-language-modules:groovy-example' )
+    ceylonCompile project( ':cross-language-modules:kotlin-example' )
+}
