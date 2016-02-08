@@ -38,12 +38,17 @@ class CeylonRunner {
 
         withCeylon( config ) { String ceylon ->
             def command = "${ceylon} ${ceylonDirective} ${options.join( ' ' )} ${module} ${finalArgs.join( ' ' )}"
-            log.info( "Running command: $command" )
-            def process = command.execute( [ ], project.file( '.' ) )
 
-            consumeOutputOf process
+            if ( project.hasProperty( 'get-ceylon-command' ) ) {
+                println command
+            } else {
+                log.info( "Running command: $command" )
+                def process = command.execute( [ ], project.file( '.' ) )
 
-            log.debug( "Ceylon process completed." )
+                consumeOutputOf process
+
+                log.debug( "Ceylon process completed." )
+            }
         }
     }
 
