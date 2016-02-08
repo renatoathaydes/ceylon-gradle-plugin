@@ -36,7 +36,6 @@ For example:
 ```groovy
 ceylon {
     module = "com.athaydes.maven"
-    flatClassPath = true
 }
 ```
 
@@ -44,25 +43,40 @@ The only mandatory field is `module`, which you should set to the name of the Ce
 
 Other properties are explained in the next sections.
 
+### Notes on default properties
+
+The default properties of this Gradle Plugin make your Ceylon project use the default Java flat classpath
+(ie. no Ceylon module isolation) because that makes it much easier to make use of several popular Java frameworks,
+as well as other JVM languages, which assume free access to everything in the classpath.
+  
+The problem with that is that the default Ceylon module isolation is lost.
+
+To use Ceylon defaults rather than Java's, add the following options to the `ceylon` block in your build file:
+  
+```groovy
+ceylon {
+    ...
+    flatClasspath = false
+    importJars = true
+}
+```
+
 ### Tasks
 
 The Ceylon-Gradle Plugin adds the following tasks to your project:
 
 * cleanCeylon - removes output created by the other tasks of this plugin.
 * resolveCeylonDependencies - resolves the project's dependencies.
+* createDependenciesPoms - creates Maven pom files for all transitive dependencies.
+* createMavenRepo - creates a local Maven repository containing all transitive dependencies.
+* createModuleDescriptors - creates module descriptors for all transitive dependencies.
 * generateOverridesFile - generates the overrides.xml file.
-* importJars - imports transitive dependencies into the `output` repository.
+* importJars - imports transitive dependencies into the `output` Ceylon repository.
 * compileCeylon - compiles the Ceylon module.
 * runCeylon - runs the Ceylon module
 * testCeylon - runs the tests in the test module
 
 Examples:
-
-#### Check that all dependencies can be resolved by Gradle
-
-```
-gradle resolveCeylonDependencies
-```
 
 #### Running the Ceylon module with a clean environment
 
@@ -99,7 +113,11 @@ The following properties can be set in the `ceylon` block:
 * `overrides`: (default: `'auto-generated/overrides.xml'`) location to store the automatically-generated overrides.xml file.
 * `mavenSettings`: (default: `'auto-generated/settings.xml'`) location of Maven settings file.
    If the file already exists, it is not overwritten, otherwise an appropriate file is generated (recommended).
-* `flatClassPath`: (default: `false`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
+* `flatClasspath`: (default: `true`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
+* `importJars`: (default: `false`) import dependencies' jar files into the Ceylon repository.
+* `forceImports`: (default: `false`) use the `--force` option when import dependencies' jar files into the 
+  Ceylon repository.
+* `verbose`: (default: `false`) use the `--verbose` option when invoking Ceylon commands.
 
 An example configuration (using most options above) might look like this:
 
@@ -107,11 +125,12 @@ An example configuration (using most options above) might look like this:
 ceylon {
     module = "com.acme.awesome"
     testModule = "test.com.acme.awesome"
-    flatClassPath = true
+    flatClasspath = false
+    importJars = true
     sourceRoots = ['source', 'src/main/ceylon']
     resourceRoots = ['resource', 'src/main/resources']
     output = 'dist'
-    flatClasspath = true
+    verbose = true
 }
 ```
 
@@ -121,14 +140,101 @@ ceylon {
 
 All direct dependencies of your project must be declared in Ceylon `module.ceylon` file.
 
-However, as Ceylon does not automatically resolve transitive Maven dependencies, the Ceylon-Gradle Plugin reads the `module.ceylon`
-file and creates an [overrides.xml](http://ceylon-lang.org/documentation/1.2/reference/repository/overrides/) file that
-informs Ceylon what those transitive dependencies are.
+However, as Ceylon does not automatically resolve transitive Maven dependencies, the Ceylon-Gradle Plugin reads
+the `module.ceylon` file and creates an
+[overrides.xml](http://ceylon-lang.org/documentation/1.2/reference/repository/overrides/)
+file that informs Ceylon what those transitive dependencies are.
 
 The dependencies are resolved using Gradle's standard mechanism, so you can use any repository supported by Gradle.
 
-So, for example, supposing you want to use a Java library, say [SparkJava](http://sparkjava.com/),
-in your Ceylon project... you would have a `module.ceylon` file similar to this:
+### Using a flat classpath VS Ceylon module system
+
+**It is important to notice that there are 2 different ways to use the Ceylon Gradle Plugin: **
+
+* **Flat classpath**: Java's default flat classpath, with JVM dependencies used as plain jars. This is the default.
+* **Ceylon module system**: Using Ceylon's standard JBoss module system, which isolates modules' classpaths and verifies the runtime is
+  consistent and not missing anything that's needed. JVM dependencies may be imported into the Ceylon repository.
+
+Which one you should use depends on your application requirements.
+
+* To use Java's flat classpath:
+
+```groovy
+ceylon {
+    ...
+    flatClasspath = true
+    importJars = false
+}
+```
+
+> The above is the default, so you might as well omit these parameters.
+
+* To use the Ceylon module system:
+
+```groovy
+ceylon {
+    ...
+    flatClasspath = false
+    importJars = true
+}
+```
+
+If Ceylon complains about packages missing, this probably means the jar you are importing refers to optional Maven
+dependencies' packages which Ceylon cannot guarantee will work at runtime!
+
+To force Ceylon to accept the imports anyway, set `forceImports` to `true`:
+
+```groovy
+ceylon {
+    ...
+    flatClasspath = false
+    importJars = true
+    forceImports = true
+}
+```
+
+Here's some differences between the two so you can decide which to use:
+
+#### Flat classpath
+
+* only one version of each module may be available to all modules at runtime.
+* Java libraries may load any classpath resource and instantiate classes from other modules. Popular Java libraries such
+  as Hibernate, Jersey and Guice, for example, require this behaviour.
+* all packages of every module are *shared* at runtime, just like in Java. At compile-time, however, the Ceylon compiler
+  can still enforce the module boundaries between different modules.
+* no need to generate extra metadata to import Jars into a local Ceylon repository.
+
+Example of importing a Maven module with coordinates `com.athaydes.groupId:module-name:1.0.0` in a Ceylon module file:
+
+```ceylon
+import "com.athaydes.groupId:module-name" "1.0.0";
+```
+
+> Notice that the module name consists of the `groupId` and the `artifactId` appended with a `:` in the middle.
+
+#### Ceylon module system
+
+* many versions of the same module may be used (not currently support by this plugin's dependency resolution).
+* modules boundaries are strictly enforced by Ceylon, so non-shared imports and internals of a module are completely
+  invisible to other modules.
+* Jars are imported into the local Ceylon repository together with a module descriptor (generated automatically by this
+  plugin. Currently all dependencies are shared and non-optional).
+
+Example of importing the same module as in the previous section, but using the Ceylon module syntax:
+
+```ceylon
+import com.athaydes.groupId.module_name "1.0.0";
+```
+
+> The module is imported into the Ceylon repository, so it must use Ceylon module name syntax: its name does not need
+  to be quoted, the name is separated from the groupId with just a `.`, and the illegal character `-` is replaced
+  with `_`.
+
+### Using a Java library with many transitive dependencies
+
+Suppose you want to use a Java library, say [SparkJava](http://sparkjava.com/),
+in your Ceylon project, and you are content with using a flat classpath...
+you would have a `module.ceylon` file similar to this:
 
 ```ceylon
 native("jvm")
@@ -253,5 +359,48 @@ The Gradle `dependencies` should be used only to add more information to how you
 handled, as in this example. This avoids tightly coupling your project to Gradle (once you have the overrides.xml file
 generated by Gradle, your project does not need anything else from Gradle and can be run by `ceylon` as usual)
 and confusion regarding where dependencies should be declared!
+
+### Depending on other Gradle modules in the same project
+
+You can add a dependency to another module of your Gradle project, be it a Java (or even Scala, Groovy or Kotlin)
+module or another Ceylon module, using this syntax in the Gradle build file:
+
+```groovy
+dependencies {
+    ceylonCompile project( ':multi-modules-project:another-module' )
+}
+```
+
+Where the name of the project is `multi-modules-project`.
+
+In the Ceylon module file, you simply refer to the name of the module (which depends on whether you're using a flat
+classpath or not, as explained above).
+
+For example, if the other module has these declarations in its Gradle build file:
+
+```groovy
+group = 'com.athaydes.gradle'
+version = '4.2'
+```
+
+> notice that, with Gradle, the module name, by default, is the name of the module root directory. To change that,
+  use a Gradle [`settings.gradle` file](https://docs.gradle.org/current/userguide/build_lifecycle.html#sec:settings_file).
+
+If using a flat classpath, you would import this module in the Ceylon module file using this statement:
+
+```ceylon
+import "com.athaydes.gradle:another-module" "4.2";
+```
+
+Is NOT using a flat classpath:
+
+```ceylon
+import com.athaydes.gradle.another_module "4.2";
+```
+
+## Gradle project examples
+
+For working examples of Gradle projects using the Ceylon Gradle Plugin, refer to the
+[test samples directory](ceylon-gradle-plugin-tests). 
 
 
