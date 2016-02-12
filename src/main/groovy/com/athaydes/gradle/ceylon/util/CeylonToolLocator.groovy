@@ -15,7 +15,8 @@ class CeylonToolLocator {
             return provided( configLocation )
         }
         List<String> options = ceylonHomeOptions() + sdkManOptions() + osOptions()
-        def ceylon = options.collect { new File( it ) }.find { it.file }
+        def ext = Os.isFamily( Os.FAMILY_WINDOWS ) ? ".bat" : ""
+        def ceylon = options.collect { new File( it + ext) }.find { it.file }
 
         if ( ceylon ) {
             return ceylon
