@@ -43,7 +43,7 @@ class CeylonRunner {
                 println command
             } else {
                 log.info( "Running command: $command" )
-                def process = command.execute( [ ], project.file( '.' ) )
+                def process = command.execute( null, project.file( '.' ) )
 
                 consumeOutputOf process
 
