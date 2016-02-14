@@ -75,16 +75,16 @@ ceylon {
 
 The Ceylon-Gradle Plugin adds the following tasks to your project:
 
-* cleanCeylon - removes output created by the other tasks of this plugin.
-* resolveCeylonDependencies - resolves the project's dependencies.
-* createDependenciesPoms - creates Maven pom files for all transitive dependencies.
-* createMavenRepo - creates a local Maven repository containing all transitive dependencies.
-* createModuleDescriptors - creates module descriptors for all transitive dependencies.
-* generateOverridesFile - generates the overrides.xml file.
-* importJars - imports transitive dependencies into the `output` Ceylon repository.
-* compileCeylon - compiles the Ceylon module.
-* runCeylon - runs the Ceylon module
-* testCeylon - runs the tests in the test module
+* `cleanCeylon` - removes output created by the other tasks of this plugin.
+* `resolveCeylonDependencies` - resolves the project's dependencies.
+* `createDependenciesPoms` - creates Maven pom files for all transitive dependencies.
+* `createMavenRepo` - creates a local Maven repository containing all transitive dependencies.
+* `createModuleDescriptors` - creates module descriptors for all transitive dependencies.
+* `generateOverridesFile` - generates the overrides.xml file.
+* `importJars` - imports transitive dependencies into the `output` Ceylon repository.
+* `compileCeylon` - compiles the Ceylon module.
+* `runCeylon` - runs the Ceylon module
+* `testCeylon` - runs the tests in the test module
 
 Examples:
 
@@ -155,7 +155,7 @@ ceylon {
 }
 ```
 
-**See the [project samples](ceylon-gradle-plugin-tests) for working example**
+**See the [project samples](ceylon-gradle-plugin-tests) for working examples.**
 
 ## Handling transitive dependencies
 
@@ -170,7 +170,7 @@ The dependencies are resolved using Gradle's standard mechanism, so you can use 
 
 ### Using a flat classpath VS Ceylon module system
 
-**It is important to notice that there are 2 different ways to use the Ceylon Gradle Plugin: **
+**It is important to notice that there are 2 different ways to use the Ceylon Gradle Plugin:**
 
 * **Flat classpath**: Java's default flat classpath, with JVM dependencies used as plain jars. This is the default.
 * **Ceylon module system**: Using Ceylon's standard JBoss module system, which isolates modules' classpaths and verifies the runtime is
@@ -235,7 +235,7 @@ import "com.athaydes.groupId:module-name" "1.0.0";
 
 #### Ceylon module system
 
-* many versions of the same module may be used (not currently support by this plugin's dependency resolution).
+* many versions of the same module may be used (not currently supported by this plugin's dependency resolution).
 * modules boundaries are strictly enforced by Ceylon, so non-shared imports and internals of a module are completely
   invisible to other modules.
 * Jars are imported into the local Ceylon repository together with a module descriptor (generated automatically by this
@@ -413,7 +413,7 @@ If using a flat classpath, you would import this module in the Ceylon module fil
 import "com.athaydes.gradle:another-module" "4.2";
 ```
 
-Is NOT using a flat classpath:
+If NOT using a flat classpath:
 
 ```ceylon
 import com.athaydes.gradle.another_module "4.2";
