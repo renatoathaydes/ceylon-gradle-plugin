@@ -1,3 +1,8 @@
+1.1.1 - 2016 Feb 28
+
+* ceylon.bat is found automatically in Windows
+* run ceylon process with the current environment rather than an empty environment
+
 1.1 - 2016 Feb 08
 
 * added support for multi-modules Gradle projects
