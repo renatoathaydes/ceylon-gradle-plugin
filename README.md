@@ -9,6 +9,9 @@ resolved by Gradle.
 This plugin can be a real lifesaver while the Ceylon ecosystem is still developing and you need 
 to rely on Java (and Scala, Groovy, Kotlin)'s libraries!
 
+Check out my [blog post](https://sites.google.com/a/athaydes.com/renato-athaydes/posts/theceylongradleplugin)
+about this plugin to understand more about the motivations behind this project.
+
 ## Using this plugin
 
 To use this plugin, simply add a Gradle build file to the root of your project
