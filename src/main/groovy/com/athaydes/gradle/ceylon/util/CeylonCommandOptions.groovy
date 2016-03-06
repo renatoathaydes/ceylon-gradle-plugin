@@ -10,7 +10,7 @@ class CeylonCommandOptions {
 
     static final Logger log = Logging.getLogger( CeylonCommandOptions )
 
-    private static List getCommonOptions( Project project, CeylonConfig config ) {
+    static List getCommonOptions( Project project, CeylonConfig config ) {
         def options = [ ]
         def overrides = GenerateOverridesFileTask.overridesFile( project, config )
         if ( overrides.exists() ) {

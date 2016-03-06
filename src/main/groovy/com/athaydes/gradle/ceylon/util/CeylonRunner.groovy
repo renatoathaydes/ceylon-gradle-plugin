@@ -54,9 +54,9 @@ class CeylonRunner {
         }
     }
 
-    static void consumeOutputOf( Process process ) {
-        consume process.in, System.out
-        consume process.err, System.err
+    static void consumeOutputOf( Process process, PrintStream out = System.out, PrintStream err = System.err ) {
+        consume process.in, out
+        consume process.err, err
 
         def exitCode = -1
         try {

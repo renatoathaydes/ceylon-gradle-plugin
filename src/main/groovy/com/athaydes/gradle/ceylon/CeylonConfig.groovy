@@ -18,6 +18,7 @@ class CeylonConfig {
     Boolean importJars = false
     Boolean forceImports = false
     Boolean verbose = false
+    String javaRuntimeDestination
 
     String testModule = ''
 

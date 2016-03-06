@@ -4,6 +4,7 @@ import com.athaydes.gradle.ceylon.task.CleanTask
 import com.athaydes.gradle.ceylon.task.CompileCeylonTask
 import com.athaydes.gradle.ceylon.task.CompileCeylonTestTask
 import com.athaydes.gradle.ceylon.task.CreateDependenciesPomsTask
+import com.athaydes.gradle.ceylon.task.CreateJavaRuntimeTask
 import com.athaydes.gradle.ceylon.task.CreateMavenRepoTask
 import com.athaydes.gradle.ceylon.task.CreateModuleDescriptorsTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
@@ -168,6 +169,19 @@ class CeylonPlugin implements Plugin<Project> {
 
         testTask.inputs.files( TestCeylonTask.inputs( project, config ) )
         testTask.outputs.files( TestCeylonTask.outputs( project, config ) )
+
+        Task createJavaRuntimeTask = project.task(
+                group: 'Build tasks',
+                dependsOn: [ 'compileCeylon' ],
+                description: 'Creates a Java runtime containing the full classpath' +
+                        ' as well as bash and bat scripts that can be used to invoke Java to run the Ceylon module' +
+                        ' in a JVM without any Ceylon tool.',
+                'createJavaRuntime' ) << {
+            CreateJavaRuntimeTask.run( project, config )
+        }
+
+        createJavaRuntimeTask.inputs.files( CreateJavaRuntimeTask.inputs( project, config ) )
+        createJavaRuntimeTask.outputs.files( CreateJavaRuntimeTask.outputs( project, config ) )
 
         def cleanTask = project.task(
                 type: Delete,
