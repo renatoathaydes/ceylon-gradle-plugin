@@ -1,11 +1,13 @@
 package com.athaydes.gradle.ceylon.util
 
 import com.athaydes.gradle.ceylon.CeylonConfig
+import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
+@CompileStatic
 class CeylonRunner {
 
     static final Logger log = Logging.getLogger( CeylonRunner )
@@ -33,7 +35,7 @@ class CeylonRunner {
     }
 
     static void run( String ceylonDirective, String module, Project project, CeylonConfig config,
-                     List<String> options, List<String> finalArgs = [] ) {
+                     List<String> options, List<String> finalArgs = [ ] ) {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
         withCeylon( config ) { String ceylon ->
@@ -43,7 +45,7 @@ class CeylonRunner {
                 println command
             } else {
                 log.info( "Running command: $command" )
-                def process = command.execute( null, project.file( '.' ) )
+                def process = command.execute( ( List ) null, project.file( '.' ) )
 
                 consumeOutputOf process
 
