@@ -13,4 +13,5 @@ ceylon {
     testModule = "test.com.athaydes.simple"
     testRoots = [ 'test-source' ]
     flatClasspath = false
+    javaRuntimeDestination = file( 'target/jvm' )
 }
