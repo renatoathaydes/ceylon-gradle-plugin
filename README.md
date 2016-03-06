@@ -18,7 +18,7 @@ and apply this plugin as shown below:
 
 ```groovy
 plugins {
-    id 'com.athaydes.ceylon' version '1.1.1'
+    id 'com.athaydes.ceylon' version '1.1.2'
 }
 ```
 
@@ -32,7 +32,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.1.1"
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.1.2"
     }
 }
 

@@ -1,3 +1,11 @@
+1.1.2 - 2016 Mar 06
+
+* new task: compileCeylonTest makes managing tests compilation and running much better.
+* new properties to configure Ceylon test sources/resources locations independently from main resources.
+* new task: createJavaRuntime which builds the runtime and bash/bat scripts to run Ceylon modules with the java command.
+* new property to allow the declaration of a module entry point, ie. the main runnable function.
+* documented Eclipse integration.
+
 1.1.1 - 2016 Feb 28
 
 * ceylon.bat is found automatically in Windows
