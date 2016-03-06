@@ -86,6 +86,7 @@ The Ceylon-Gradle Plugin adds the following tasks to your project:
 * `compileCeylonTest` - compiles the Ceylon test module.
 * `runCeylon` - runs the Ceylon module
 * `testCeylon` - runs the tests in the test module
+* `createJavaRuntime` - creates a directory with all resources required to run the Ceylon application with only the JVM.
 
 Examples:
 
@@ -142,6 +143,7 @@ The following properties can be set in the `ceylon` block:
 * `forceImports`: (default: `false`) use the `--force` option when importing dependencies' jar files into the 
   Ceylon repository.
 * `verbose`: (default: `false`) use the `--verbose` option when invoking Ceylon commands.
+* `javaRuntimeDestination`: (default: `build/java-runtime`) directory to save JVM resources created by the `createJavaRuntime` task.
 
 An example configuration (using most options above) might look like this:
 
@@ -155,6 +157,7 @@ ceylon {
     resourceRoots = ['resource', 'src/main/resources']
     output = 'dist'
     verbose = true
+    javaRuntimeDestination = file('target/jvm')
 }
 ```
 
