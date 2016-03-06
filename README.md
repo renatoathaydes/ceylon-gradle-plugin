@@ -127,6 +127,8 @@ The following properties can be set in the `ceylon` block:
   as in that case, the Ceylon location will be found automatically.
 * `sourceRoots`: (default: `['source']`) List of directories where the Ceylon source code is located.
 * `resourceRoots`: (default: `['resource']`) List of directories where resources are located.
+* `testRoots`: (default `['source']`) List of directories where Ceylon test code is located.
+* `testResourceRoots` (default `['test-resource']`) List of directories where test resources are located.
 * `output`: (default: `modules`) specifies the output module repository.
 * `module`: (**mandatory**) name of the Ceylon module.
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.
@@ -136,7 +138,7 @@ The following properties can be set in the `ceylon` block:
    If the file already exists, it is not overwritten, otherwise an appropriate file is generated (recommended).
 * `flatClasspath`: (default: `true`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
 * `importJars`: (default: `false`) import dependencies' jar files into the Ceylon repository.
-* `forceImports`: (default: `false`) use the `--force` option when import dependencies' jar files into the 
+* `forceImports`: (default: `false`) use the `--force` option when importing dependencies' jar files into the 
   Ceylon repository.
 * `verbose`: (default: `false`) use the `--verbose` option when invoking Ceylon commands.
 
