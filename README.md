@@ -131,8 +131,8 @@ The following properties can be set in the `ceylon` block:
 * `module`: (**mandatory**) name of the Ceylon module.
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.
 * `moduleExclusions`: (default: `[]`) name of the modules to remove from the compilation and runtime.
-* `overrides`: (default: `'auto-generated/overrides.xml'`) location to store the automatically-generated overrides.xml file.
-* `mavenSettings`: (default: `'auto-generated/settings.xml'`) location of Maven settings file.
+* `overrides`: (default: `'build/overrides.xml'`) location to store the automatically-generated overrides.xml file.
+* `mavenSettings`: (default: `'build/maven-settings.xml'`) location of Maven settings file.
    If the file already exists, it is not overwritten, otherwise an appropriate file is generated (recommended).
 * `flatClasspath`: (default: `true`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
 * `importJars`: (default: `false`) import dependencies' jar files into the Ceylon repository.
@@ -156,6 +156,24 @@ ceylon {
 ```
 
 **See the [project samples](ceylon-gradle-plugin-tests) for working examples.**
+
+## Integration with Eclipse
+
+When you use both this plugin and Eclipse, you need to let Eclipse know about the resources created by this
+plugin. That's very easy:
+
+* open the `Project Properties` in Eclipse.
+* go to the `Ceylon Build > Module repositories` section.
+* in `Module overrides file`, enter the path to the `overrides.xml` file created by this plugin.
+* if you configured this plugin to use a `flatClasspath`, check the equivalent box just below the overrides file.
+* click on the `Add Maven Repository...` button.
+* enter the path to the Maven `settings.xml` file created by this plugin.
+* done! Just hit `OK` a few times and build the project again.
+
+Notes:
+
+* by default, the overrides file is saved at `build/overrides.xml`.
+* by default, the Maven settings file is saved at `build/maven-settings.xml`.
 
 ## Handling transitive dependencies
 
