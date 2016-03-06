@@ -83,6 +83,7 @@ The Ceylon-Gradle Plugin adds the following tasks to your project:
 * `generateOverridesFile` - generates the overrides.xml file.
 * `importJars` - imports transitive dependencies into the `output` Ceylon repository.
 * `compileCeylon` - compiles the Ceylon module.
+* `compileCeylonTest` - compiles the Ceylon test module.
 * `runCeylon` - runs the Ceylon module
 * `testCeylon` - runs the tests in the test module
 
