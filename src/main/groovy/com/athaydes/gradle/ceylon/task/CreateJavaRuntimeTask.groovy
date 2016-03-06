@@ -65,10 +65,29 @@ class CreateJavaRuntimeTask {
                 log.debug( "Got the classpath:\n$classpath" )
 
                 def fileNames = moveFilesToDestination project, classpath, destination
-                createUnixScript( config, fileNames, destination )
-                createWindowsScript( config, fileNames, destination )
+
+                def main = findMain config
+
+                createUnixScript( main, fileNames, destination )
+                createWindowsScript( main, fileNames, destination )
             }
         }
+    }
+
+    private static String findMain( CeylonConfig config ) {
+        def main = config.entryPoint ?: "${config.module}::run"
+        def startNameIndex = main.indexOf( '::' ) + 2
+        if ( startNameIndex < 2 ) {
+            throw new GradleException( "Invalid entry point: '$main'. Must be of form pkg.name::functionName or pkg.name::ClassName" )
+        }
+
+        if ( ( main[ startNameIndex ] as Character ).lowerCase ) {
+            // ceylon function name ends with '_' in the JVM
+            main += '_'
+        }
+
+        // turn main name into the equivalent JVM name
+        return main.replace( '::', '.' )
     }
 
     private static List<String> moveFilesToDestination( Project project, String classpath, File destination ) {
@@ -93,7 +112,7 @@ class CreateJavaRuntimeTask {
         return fileNames
     }
 
-    private static void createUnixScript( CeylonConfig config,
+    private static void createUnixScript( String main,
                                           List<String> fileNames,
                                           File destination ) {
         def unixScriptFile = new File( destination, 'run.sh' )
@@ -116,7 +135,7 @@ class CreateJavaRuntimeTask {
                 |  fi
                 |fi
                 |
-                |"\$JAVA" -cp ${unixClasspath} ${config.module}.run_ "\$@"
+                |"\$JAVA" -cp ${unixClasspath} ${main} "\$@"
                 |""".stripMargin().replaceAll( Pattern.quote( '\r\n' ), '\n' )
 
         unixScriptFile.write unixScript, 'UTF-8'
@@ -124,7 +143,7 @@ class CreateJavaRuntimeTask {
         log.info( 'Saved Unix/Mac run script at {}', unixScriptFile.absolutePath )
     }
 
-    private static void createWindowsScript( CeylonConfig config,
+    private static void createWindowsScript( String main,
                                              List<String> fileNames,
                                              File destination ) {
         def windowsScriptFile = new File( destination, 'run.bat' )
@@ -146,7 +165,7 @@ class CreateJavaRuntimeTask {
                 |  )
                 |)
                 |
-                |%JAVA% -cp ${windowsClasspath} ${config.module}.run_ %*
+                |%JAVA% -cp ${windowsClasspath} ${main} %*
                 |""".stripMargin().replaceAll( Pattern.quote( '\r\n' ), '\n' )
 
         windowsScriptFile.write windowsScript, 'UTF-8'

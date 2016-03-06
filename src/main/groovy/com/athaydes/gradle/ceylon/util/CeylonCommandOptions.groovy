@@ -58,8 +58,13 @@ class CeylonCommandOptions {
     }
 
     static List getRunOptions( Project project, CeylonConfig config ) {
-        // no specific run options yet
-        getCommonOptions( project, config )
+        def options = [ ]
+
+        if ( config.entryPoint ) {
+            options << "--run=${config.entryPoint}"
+        }
+
+        getCommonOptions( project, config ) + options
     }
 
     static List getTestOptions( Project project, CeylonConfig config ) {
