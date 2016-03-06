@@ -445,6 +445,65 @@ If NOT using a flat classpath:
 import com.athaydes.gradle.another_module "4.2";
 ```
 
+## Running Ceylon code without the ceylon tool in the JVM
+
+The `createJavaRuntime` task creates a directory containing all jars required to run your Ceylon module without using
+`ceylon run`, as well as bash/bat scripts to make it trivial to start the `java` process with the Ceylon module.
+
+It is extremely easy to do it. From the root directory of your Ceylon project, run the following commands:
+
+#### In Linux/Mac systems
+
+```
+./gradlew clean createJavaRuntime
+bash build/java-runtime/run.sh
+```
+
+#### In Windows
+
+```
+gradlew clean createJavaRuntime
+build\java-runtime\run.bat
+```
+
+### Why run your Ceylon code with java instead of ceylon run?
+
+Because you can get a 10x startup time improvement just by doing this.
+
+Check this out (you can run the same from the [module-with-tests-sample](ceylon-gradle-plugin-tests/module-with-tests-sample)
+directory):
+
+```
+  # clean, compile and create the Java runtime
+$ ./gradlew clean createJavaRuntime
+...
+
+  # run the module directly with the ceylon command
+  # to print the full command, run
+  # ./gradlew -P get-ceylon-command runCeylon
+$ time ceylon run \
+    --overrides build/overrides.xml \
+    --rep=aether:build/maven-settings.xml \
+    --rep=modules \
+    --run=com.athaydes.simple::addArgs \
+    com.athaydes.simple 2 5.3 6
+    
+The sum of { 2.0, 5.3, 6.0 } is: 13.3
+
+real	0m1.033s
+user	0m2.459s
+sys	0m0.189s
+
+  # invoke java with the run.sh created by the Gradle Plugin
+$ time bash target/jvm/run.sh 2 5.3 6
+
+The sum of { 2.0, 5.3, 6.0 } is: 13.3
+
+real	0m0.160s
+user	0m0.173s
+sys	0m0.031s
+```
+
 ## Gradle project examples
 
 For working examples of Gradle projects using the Ceylon Gradle Plugin, refer to the
