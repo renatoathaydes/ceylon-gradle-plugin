@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon
 
 import com.athaydes.gradle.ceylon.task.CleanTask
 import com.athaydes.gradle.ceylon.task.CompileCeylonTask
+import com.athaydes.gradle.ceylon.task.CompileCeylonTestTask
 import com.athaydes.gradle.ceylon.task.CreateDependenciesPomsTask
 import com.athaydes.gradle.ceylon.task.CreateMavenRepoTask
 import com.athaydes.gradle.ceylon.task.CreateModuleDescriptorsTask
@@ -145,9 +146,21 @@ class CeylonPlugin implements Plugin<Project> {
             RunCeylonTask.run( project, config )
         }
 
+        Task compileTestTask = project.task(
+                group: 'Build tasks',
+                dependsOn: [ 'compileCeylon' ],
+                description: 'Compiles Ceylon and Java test code and directly' +
+                        ' produces module and source archives in a module repository.',
+                'compileCeylonTest' ) << {
+            CompileCeylonTestTask.run( project, config )
+        }
+
+        compileTestTask.inputs.files( CompileCeylonTestTask.inputs( project, config ) )
+        compileTestTask.outputs.files( CompileCeylonTestTask.outputs( project, config ) )
+
         Task testTask = project.task(
                 group: 'Verification tasks',
-                dependsOn: [ 'compileCeylon' ],
+                dependsOn: [ 'compileCeylonTest' ],
                 description: 'Runs all tests in a Ceylon module.',
                 'testCeylon' ) << {
             TestCeylonTask.run( project, config )

@@ -35,6 +35,17 @@ class CeylonCommandOptions {
         project.file( config.output )
     }
 
+    static List getTestCompileOptions( Project project, CeylonConfig config ) {
+        def options = [ ]
+
+        options << "--out=${getOut( project, config ).absolutePath}"
+
+        config.testRoots.each { options << "--source $it" }
+        config.testResourceRoots.each { options << "--resource $it" }
+
+        return getCommonOptions( project, config ) + options
+    }
+
     static List getCompileOptions( Project project, CeylonConfig config ) {
         def options = [ ]
 
