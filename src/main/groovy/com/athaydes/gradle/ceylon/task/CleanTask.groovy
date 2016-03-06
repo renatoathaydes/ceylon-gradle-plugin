@@ -10,8 +10,10 @@ class CleanTask {
         [ project.buildDir ] +
                 GenerateOverridesFileTask.outputs( project, config ) +
                 CompileCeylonTask.outputs( project, config ) +
+                CompileCeylonTestTask.outputs( project, config ) +
                 CreateDependenciesPomsTask.outputs( project, config ) +
                 CreateMavenRepoTask.outputs( project, config ) +
+                CreateJavaRuntimeTask.outputs( project, config ) +
                 MavenSettingsFileCreator.mavenSettingsFile( project, config ) +
                 CreateModuleDescriptorsTask.outputs( project, config )
     }
