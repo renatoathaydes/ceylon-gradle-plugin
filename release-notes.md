@@ -1,3 +1,9 @@
+1.2.0 - 2016 June 19
+
+* issue #9: tap into Gradle lifecycle tasks such as assemble, build and check
+* issue #11: validate Ceylon Location before accepting it
+* issue #12: Ceylon module may include literal String for docs
+
 1.1.2 - 2016 Mar 06
 
 * new task: compileCeylonTest makes managing tests compilation and running much better.
