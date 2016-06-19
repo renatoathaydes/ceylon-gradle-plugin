@@ -1,3 +1,4 @@
+apply plugin: 'java'
 apply plugin: 'com.athaydes.ceylon'
 
 group 'com.athaydes.gradle.ceylon'

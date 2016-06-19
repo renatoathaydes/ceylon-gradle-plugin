@@ -12,29 +12,26 @@ import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
 import com.athaydes.gradle.ceylon.task.RunCeylonTask
 import com.athaydes.gradle.ceylon.task.TestCeylonTask
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.internal.plugins.PluginApplicationException
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Delete
-import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.base.plugins.LanguageBasePlugin
-import org.gradle.model.internal.registry.ModelRegistry
 
-import javax.inject.Inject
-
-class CeylonPlugin extends LanguageBasePlugin {
+class CeylonPlugin implements Plugin<Project> {
 
     static final Logger log = Logging.getLogger( CeylonPlugin )
 
-    @Inject
-    CeylonPlugin( Instantiator instantiator, ModelRegistry modelRegistry ) {
-        super( instantiator, modelRegistry )
-    }
-
     @Override
     void apply( Project project ) {
-        super.apply( project )
+        try {
+            project.pluginManager.apply( LanguageBasePlugin )
+        } catch ( PluginApplicationException e ) {
+            log.debug( "Failed to apply LanguageBasePlugin - it had already been applied", e )
+        }
 
         log.debug( "CeylonPlugin being applied to project: ${project.name}" )
 

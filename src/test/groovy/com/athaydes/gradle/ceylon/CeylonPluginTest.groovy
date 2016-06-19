@@ -28,4 +28,14 @@ class CeylonPluginTest {
         assert project.configurations.ceylonRuntime
     }
 
+    @Test
+    void "Can apply Java plugin, then Ceylon plugin"() {
+        Project project = ProjectBuilder.builder()
+                .withName( 'test-project' )
+                .build()
+
+        project.apply plugin: 'java'
+        project.apply plugin: 'com.athaydes.ceylon'
+    }
+
 }
