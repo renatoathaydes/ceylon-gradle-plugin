@@ -1,6 +1,7 @@
 package com.athaydes.gradle.ceylon.parse
 
 import groovy.transform.CompileStatic
+import groovy.transform.Immutable
 import groovy.transform.ToString
 
 import java.util.regex.Matcher
@@ -14,8 +15,14 @@ class AnnotationState {
     boolean parsingCloseBracket = false
 }
 
+@Immutable
+class ParsingDocs {
+    boolean on
+    boolean isTripleQuote
+}
+
 abstract class BaseState {
-    boolean parsingDocs = false
+    ParsingDocs parsingDocs = new ParsingDocs( false, false )
     AnnotationState parsingAnnotationState = null
     boolean parsingName = false
     boolean parsingVersion = false
@@ -44,6 +51,7 @@ class CeylonModuleParser {
     static final mavenModuleIdentifierRegex = /^"[a-z][a-zA-Z_0-9\.:\-]*[a-zA-Z_0-9]"/
     static final annotationNameRegex = /^[a-z_][a-zA-Z_0-9]*/
     static final versionRegex = /^\"[a-zA-Z_0-9][a-zA-Z_0-9\.\-\+]*\"/
+    static final String nonEscapedTripleQuoteRegex = /.*(?<!\\)"""/
     static final String nonEscapedQuoteRegex = /.*(?<!\\)"/
     static final String endBlockCommentRegex = /.*(?<!\\)\*\//
 
@@ -100,7 +108,7 @@ class CeylonModuleParser {
                 def lastIndex = endBlockMatcher.end()
                 consumeChars lastIndex, word, result
             }
-        } else if ( word.startsWith( '/*' ) && !state.parsingDocs ) {
+        } else if ( word.startsWith( '/*' ) && !state.parsingDocs.on ) {
             blockComment = true
             consumeChars 2, word, result
         } else if ( word.startsWith( '//' ) ) {
@@ -135,8 +143,8 @@ class CeylonModuleParser {
                     words.addFirst( word[ 1..-1 ] )
                 }
             }
-        } else if ( state.parsingDocs ) {
-            Matcher unescapedDelimiterMatcher = ( word =~ nonEscapedQuoteRegex )
+        } else if ( state.parsingDocs.on ) {
+            Matcher unescapedDelimiterMatcher = matcherFor( state.parsingDocs, word )
             if ( unescapedDelimiterMatcher.find() ) {
                 def lastIndex = unescapedDelimiterMatcher.end()
                 result.hasDocs = true
@@ -150,7 +158,8 @@ class CeylonModuleParser {
                 if ( result.hasDocs ) {
                     throw error( 'more than one doc String is not allowed' )
                 }
-                this.state = new ModuleDeclarationState( parsingDocs: true )
+                def isTripleQuote = word.startsWith( '"""' )
+                this.state = new ModuleDeclarationState( parsingDocs: new ParsingDocs( true, isTripleQuote ) )
                 consumeChars 1, word, result
             } else {
                 this.state = new ModuleDeclarationState(
@@ -168,8 +177,8 @@ class CeylonModuleParser {
                 def lastIndex = endBlockMatcher.end()
                 consumeChars lastIndex, word, result
             }
-        } else if ( state.parsingDocs ) {
-            Matcher unescapedDelimiterMatcher = ( word =~ nonEscapedQuoteRegex )
+        } else if ( state.parsingDocs.on ) {
+            Matcher unescapedDelimiterMatcher = matcherFor( state.parsingDocs, word )
             if ( unescapedDelimiterMatcher.find() ) {
                 def lastIndex = unescapedDelimiterMatcher.end()
                 this.state = new ModuleImportsState()
@@ -225,7 +234,8 @@ class CeylonModuleParser {
             if ( word == 'import' ) {
                 this.state = new ModuleImportsState( parsingName: true )
             } else if ( word.startsWith( '"' ) ) {
-                this.state = new ModuleImportsState( parsingDocs: true )
+                def isTripleQuote = word.startsWith( '"""' )
+                this.state = new ModuleImportsState( parsingDocs: new ParsingDocs( true, isTripleQuote ) )
                 consumeChars 1, word, result
             } else if ( word == '}' ) {
                 this.state = new DoneState()
@@ -343,6 +353,12 @@ class CeylonModuleParser {
     private RuntimeException error( String message ) {
         new RuntimeException( "Cannot parse module [$fileName]. " +
                 "Error on line $currentLine: $message" )
+    }
+
+    private static Matcher matcherFor( ParsingDocs state, String word ) {
+        state.isTripleQuote ?
+                word =~ nonEscapedTripleQuoteRegex :
+                word =~ nonEscapedQuoteRegex
     }
 
 }

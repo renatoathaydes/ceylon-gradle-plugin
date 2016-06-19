@@ -60,6 +60,35 @@ class CeylonModuleParserTest {
     }
 
     @Test
+    void "Can parse module with literal String comment with block comment inside it"() {
+        def result = parser.parse( 'example.ceylon', """
+         |\"\"\"A comment
+         |spanning several lines
+         |Some [[Example]] markup.
+         |And even some code:
+         |    shared function() {
+         |        print(\"Hello world!\");
+         |    }
+         |
+         |/* block comments
+         |    are acceptable inside doc comments.
+         |  */
+         |\"\"\"
+         |module my.test.module "0" {
+         |  \"\"\"This import is required.
+         |   The \"1.0\" is the version!
+         |  \"\"\"
+         |  import other.module "1.0";
+         |}
+         |""".stripMargin() )
+
+        assert result
+        assert result.moduleName == 'my.test.module'
+        assert result.version == '0'
+        assert result.imports == [ [ name: 'other.module', version: '1.0' ] ]
+    }
+
+    @Test
     void "Can parse a simple module file"() {
         def result = parser.parse 'myfile.ceylon', """
                 // some module
