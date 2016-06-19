@@ -19,15 +19,6 @@ class CeylonRunner {
             ceylonConsumer ceylon
         } catch ( GradleException e ) {
             throw e
-        } catch ( IOException e ) {
-            def messages = [ e.message, e.cause?.message ]
-            if ( messages.any { it ==~ /.*Cannot run.*"ceylon".*/ } ) {
-                print CeylonToolLocator.error()
-                throw new GradleException(
-                        'Ceylon could not be found! See suggestions above to fix the problem.' )
-            }
-            throw new GradleException(
-                    'Problem running the ceylon command. Run with --stacktrace for the cause.', e )
         } catch ( e ) {
             throw new GradleException(
                     'Problem running the ceylon command. Run with --stacktrace for the cause.', e )

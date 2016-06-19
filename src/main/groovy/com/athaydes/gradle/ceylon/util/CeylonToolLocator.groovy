@@ -1,6 +1,5 @@
 package com.athaydes.gradle.ceylon.util
 
-import groovy.transform.Memoized
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.GradleException
 
@@ -8,15 +7,27 @@ import java.util.concurrent.Callable
 
 class CeylonToolLocator {
 
-
-    @Memoized
     static String findCeylon( configLocation ) {
+        def ceylon = findCeylonLocation( configLocation )
+        try {
+            def process = ceylon.execute()
+            process.waitFor()
+            return ceylon
+        } catch ( IOException e ) {
+            println error()
+            throw new GradleException( 'Ceylon could not be found! See suggestions above to fix the problem.', e )
+        } catch ( e ) {
+            throw new GradleException( 'A problem has occurred while trying to run the Ceylon tool at: ' + ceylon, e )
+        }
+    }
+
+    private static String findCeylonLocation( configLocation ) {
         if ( configLocation ) {
             return provided( configLocation )
         }
         List<String> options = ceylonHomeOptions() + sdkManOptions() + osOptions()
         def ext = Os.isFamily( Os.FAMILY_WINDOWS ) ? ".bat" : ""
-        def ceylon = options.collect { new File( it + ext) }.find { it.file }
+        def ceylon = options.collect { new File( it + ext ) }.find { it.file }
 
         if ( ceylon ) {
             return ceylon
