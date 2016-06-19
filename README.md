@@ -21,7 +21,7 @@ and apply this plugin as shown below:
 
 ```groovy
 plugins {
-    id 'com.athaydes.ceylon' version '1.1.2'
+    id 'com.athaydes.ceylon' version '1.2.0'
 }
 ```
 
@@ -35,7 +35,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.1.2"
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.2.0"
     }
 }
 
@@ -90,6 +90,8 @@ The Ceylon-Gradle Plugin adds the following tasks to your project:
 * `runCeylon` - runs the Ceylon module (see the `entryPoint` config property).
 * `testCeylon` - runs the tests in the test module.
 * `createJavaRuntime` - creates a directory with all resources required to run the Ceylon application with only the JVM.
+
+> Lifecycle tasks such as `build` and `check` also work with the Ceylon Plugin.
 
 Examples:
 
