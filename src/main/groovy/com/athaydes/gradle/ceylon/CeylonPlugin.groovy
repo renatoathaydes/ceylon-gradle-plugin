@@ -12,19 +12,30 @@ import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
 import com.athaydes.gradle.ceylon.task.RunCeylonTask
 import com.athaydes.gradle.ceylon.task.TestCeylonTask
-import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Delete
+import org.gradle.internal.reflect.Instantiator
+import org.gradle.language.base.plugins.LanguageBasePlugin
+import org.gradle.model.internal.registry.ModelRegistry
 
-class CeylonPlugin implements Plugin<Project> {
+import javax.inject.Inject
+
+class CeylonPlugin extends LanguageBasePlugin {
 
     static final Logger log = Logging.getLogger( CeylonPlugin )
 
+    @Inject
+    CeylonPlugin( Instantiator instantiator, ModelRegistry modelRegistry ) {
+        super( instantiator, modelRegistry )
+    }
+
     @Override
     void apply( Project project ) {
+        super.apply( project )
+
         log.debug( "CeylonPlugin being applied to project: ${project.name}" )
 
         CeylonConfig config = project.extensions
@@ -197,6 +208,8 @@ class CeylonPlugin implements Plugin<Project> {
         }
 
         project.getTasksByName( 'dependencies', false )*.dependsOn resolveDepsTask
+        project.getTasksByName( 'assemble', false )*.dependsOn compileTask
+        project.getTasksByName( 'check', false )*.dependsOn testTask
     }
 
 }
