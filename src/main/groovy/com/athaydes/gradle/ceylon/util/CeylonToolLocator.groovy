@@ -11,7 +11,7 @@ class CeylonToolLocator {
         def ceylon = findCeylonLocation( configLocation )
         try {
             def process = ceylon.execute()
-            process.consumeProcessOutput(null, null)
+            process.consumeProcessOutput()
             process.waitFor()
             return ceylon
         } catch ( IOException e ) {
