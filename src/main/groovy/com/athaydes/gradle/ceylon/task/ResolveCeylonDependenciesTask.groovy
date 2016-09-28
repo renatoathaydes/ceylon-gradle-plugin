@@ -3,12 +3,15 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.parse.CeylonModuleParser
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.TaskAction
 
-class ResolveCeylonDependenciesTask {
+class ResolveCeylonDependenciesTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( ResolveCeylonDependenciesTask )
     public static final String CEYLON_DEPENDENCIES = 'CeylonDependencies'
@@ -18,7 +21,15 @@ class ResolveCeylonDependenciesTask {
         [ { moduleFile( project, config ) }, { project.allprojects*.buildFile } ]
     }
 
-    static def run( Project project, CeylonConfig config ) {
+    @InputFiles
+    List getFileInputs() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputs( project, config )
+    }
+
+    @TaskAction
+    void run() {
+        final config = project.extensions.getByType( CeylonConfig )
         File module = moduleFile( project, config )
         log.info( "Parsing Ceylon module file at ${module.path}" )
 

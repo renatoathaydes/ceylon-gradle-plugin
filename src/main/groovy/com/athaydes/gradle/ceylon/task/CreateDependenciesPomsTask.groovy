@@ -3,10 +3,14 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import com.athaydes.gradle.ceylon.util.MavenPomCreator
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ResolvedDependency
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 
-class CreateDependenciesPomsTask {
+class CreateDependenciesPomsTask extends DefaultTask {
 
     static inputs( Project project, CeylonConfig config ) {
         ResolveCeylonDependenciesTask.inputs( project, config )
@@ -18,7 +22,20 @@ class CreateDependenciesPomsTask {
         }
     }
 
-    static void run( Project project, CeylonConfig config ) {
+    @InputFiles
+    List getInputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputs( project, config )
+    }
+
+    @OutputFile
+    def getOutputFile() {
+        final config = project.extensions.getByType( CeylonConfig )
+        outputs( project, config )
+    }
+
+    @TaskAction
+    void run() {
         def dependencyTree = project.extensions
                 .getByName( ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES ) as DependencyTree
 

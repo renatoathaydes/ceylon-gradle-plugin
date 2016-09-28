@@ -4,6 +4,7 @@ import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Nullable
 import org.gradle.api.Project
@@ -11,8 +12,11 @@ import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.TaskAction
 
-class ImportJarsTask {
+class ImportJarsTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( ImportJarsTask )
 
@@ -25,8 +29,23 @@ class ImportJarsTask {
         { -> ceylonRepo( project, config ) }
     }
 
-    static void run( Project project, CeylonConfig config ) {
+    @InputFiles
+    def getInputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputs( project, config )
+    }
+
+    @OutputFiles
+    def getOutputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        outputs( project, config )
+    }
+
+    @TaskAction
+    void run() {
         log.debug "Importing artifact jars"
+
+        final config = project.extensions.getByType( CeylonConfig )
 
         def repo = ceylonRepo( project, config )
 

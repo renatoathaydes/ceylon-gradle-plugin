@@ -3,13 +3,17 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import groovy.xml.MarkupBuilder
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.TaskAction
 
-class GenerateOverridesFileTask {
+class GenerateOverridesFileTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( GenerateOverridesFileTask )
 
@@ -23,7 +27,22 @@ class GenerateOverridesFileTask {
         [ { overridesFile( project, config ) } ]
     }
 
-    static void run( Project project, CeylonConfig config ) {
+    @InputFiles
+    List getInputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputs( project, config )
+    }
+
+    @OutputFiles
+    List getOutputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        outputs( project, config )
+    }
+
+    @TaskAction
+    void run() {
+        final config = project.extensions.getByType( CeylonConfig )
+
         def overridesFile = overridesFile( project, config )
         def moduleExclusions = processedModuleExclusions config.moduleExclusions
         generateOverridesFile( project, overridesFile, moduleExclusions )

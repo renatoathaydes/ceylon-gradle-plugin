@@ -3,10 +3,14 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import com.athaydes.gradle.ceylon.util.MavenSettingsFileCreator
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ResolvedDependency
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.TaskAction
 
-class CreateMavenRepoTask {
+class CreateMavenRepoTask extends DefaultTask {
 
     static inputs( Project project, CeylonConfig config ) {
         ResolveCeylonDependenciesTask.inputs( project, config )
@@ -19,7 +23,22 @@ class CreateMavenRepoTask {
         }
     }
 
-    static void run( Project project, CeylonConfig config ) {
+    @InputFiles
+    def getInputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputs( project, config )
+    }
+
+    @OutputFiles
+    def getOutputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        outputs( project, config )
+    }
+
+    @TaskAction
+    void run() {
+        final config = project.extensions.getByType( CeylonConfig )
+
         def rootDir = rootDir project, config
 
         MavenSettingsFileCreator.createMavenSettingsFile project, config

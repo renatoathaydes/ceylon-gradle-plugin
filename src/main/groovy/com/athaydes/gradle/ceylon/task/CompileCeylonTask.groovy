@@ -4,12 +4,16 @@ import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
 import groovy.transform.CompileStatic
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.TaskAction
 
 @CompileStatic
-class CompileCeylonTask {
+class CompileCeylonTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( CompileCeylonTask )
 
@@ -24,7 +28,22 @@ class CompileCeylonTask {
         [ { project.file( config.output ) } ]
     }
 
-    static void run( Project project, CeylonConfig config ) {
+    @InputFiles
+    def getInputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputs( project, config )
+    }
+
+    @OutputFiles
+    def getOutputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        outputs( project, config )
+    }
+
+    @TaskAction
+    void run() {
+        final config = project.extensions.getByType( CeylonConfig )
+
         CeylonRunner.run 'compile', config.module, project, config,
                 CeylonCommandOptions.getCompileOptions( project, config )
     }
