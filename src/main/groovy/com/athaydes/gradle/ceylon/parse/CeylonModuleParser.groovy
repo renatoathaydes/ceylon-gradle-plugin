@@ -47,8 +47,9 @@ class DoneState {}
 @CompileStatic
 class CeylonModuleParser {
 
-    static final moduleIdentifierRegex = /^[a-z][a-zA-Z_0-9\.]*[a-zA-Z_0-9]/
-    static final mavenModuleIdentifierRegex = /^"[a-z][a-zA-Z_0-9\.:\-]*[a-zA-Z_0-9]"/
+    static final moduleNamespaceRegex = /^[a-z_][a-zA-Z_0-9]*/
+    static final moduleIdentifierRegex = /[a-z][a-zA-Z_0-9\.]*[a-zA-Z_0-9]/
+    static final mavenModuleIdentifierRegex = /"[a-z][a-zA-Z_0-9\.:\-]*[a-zA-Z_0-9]"/
     static final annotationNameRegex = /^[a-z_][a-zA-Z_0-9]*/
     static final versionRegex = /^\"[a-zA-Z_0-9][a-zA-Z_0-9\.\-\+]*\"/
     static final String nonEscapedTripleQuoteRegex = /.*(?<!\\)"""/
@@ -192,21 +193,32 @@ class CeylonModuleParser {
         } else if ( state.parsingAnnotationState ) {
             parseAnnotation( word, state, state.parsingAnnotationState, result )
         } else if ( state.parsingName ) {
-            def nameMatcher = ( word =~ moduleIdentifierRegex )
-            def mavenNameMatcher = ( word =~ mavenModuleIdentifierRegex )
-            def matcher = nameMatcher.find() ? nameMatcher :
-                    mavenNameMatcher.find() ? mavenNameMatcher : null
+            def nameMatcher = ( word =~ "($moduleNamespaceRegex:)?($moduleIdentifierRegex)" )
+            def mavenNameMatcher = ( word =~ "($moduleNamespaceRegex:)?($mavenModuleIdentifierRegex)" )
+            def matcher = nameMatcher.matches() ? nameMatcher :
+                    mavenNameMatcher.matches() ? mavenNameMatcher : null
             if ( matcher != null ) {
-                def lastIndex = matcher.end()
-                def name = mavenNameMatcher.is( matcher ) ?
-                        word[ 1..( lastIndex - 2 ) ] :
-                        word[ 0..<lastIndex ]
+                def namespace = matcher.group( 1 ) ?: ''
+                if ( namespace.endsWith( ':' ) ) namespace -= ':'
+                def name = matcher.group( 2 )
+
+                if ( mavenNameMatcher.is( matcher ) ) {
+                    // remove the quotes if it's a Maven match
+                    name = name[ 1..-2 ]
+
+                    if ( !namespace ) namespace = 'maven'
+                }
+
                 def imports = getImports( result )
+
+                def importEntry = [ name: name ]
+                if ( namespace ) importEntry.namespace = namespace
+
                 if ( !imports.empty && !imports.last().name ) { // newest entry has no name yet
                     assert imports.last().containsKey( 'shared' )
-                    imports.last().name = name
+                    imports.last().putAll( importEntry )
                 } else {
-                    imports << [ name: name ]
+                    imports << importEntry
                 }
                 this.state = new ModuleImportsState( parsingVersion: true )
             } else {

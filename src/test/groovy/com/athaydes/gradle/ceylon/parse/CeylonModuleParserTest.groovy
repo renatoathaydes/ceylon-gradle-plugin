@@ -136,7 +136,7 @@ class CeylonModuleParserTest {
         assert result.imports == [
                 [ name: 'java.lang.base', version: '7' ],
                 [ name: 'ceylon.collection', version: '1.2' ],
-                [ name: 'com.maven:module', version: '2.3' ],
+                [ name: 'com.maven:module', version: '2.3', namespace: 'maven' ],
                 [ name: 'one.more.ceylon.module', version: '4.3' ],
         ]
     }
@@ -180,9 +180,9 @@ class CeylonModuleParserTest {
         assert result.moduleName == 'com.hello.world'
         assert result.version == '1.0'
         assert result.imports == [
-                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1' ],
-                [ name: 'org.apache.logging.log4j:log4j-api', version: '2.4.1' ],
-                [ name: 'org.junit:junit', version: '4.12' ],
+                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1', namespace: 'maven' ],
+                [ name: 'org.apache.logging.log4j:log4j-api', version: '2.4.1', namespace: 'maven' ],
+                [ name: 'org.junit:junit', version: '4.12', namespace: 'maven' ],
                 [ name: 'ceylon.collection', version: '1.2' ]
         ]
     }
@@ -275,8 +275,41 @@ class CeylonModuleParserTest {
         assert result.version == '1.0.0'
         assert result.imports == [
                 [ name: 'java.base', version: '8' ],
-                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1', shared: true ],
-                [ name: 'org.spockframework:spock-core', version: '1.0-groovy-2.4' ],
+                [ name: 'org.apache.logging.log4j:log4j-core', version: '2.4.1', shared: true, namespace: 'maven' ],
+                [ name: 'org.spockframework:spock-core', version: '1.0-groovy-2.4', namespace: 'maven' ],
+        ]
+    }
+
+    @Test
+    void "Can parse name-spaced module imports"() {
+        def result = parser.parse 'module.ceylon', """\
+        |native("jvm")
+        |module flight "1.0.0" {
+        |   import ceylon.interop.java "1.2.3";
+        |
+        |   import "org.springframework.boot:spring-boot-starter-web" "1.3.3.RELEASE";
+        |   import "org.springframework.boot:spring-boot-starter-undertow" "1.3.3.RELEASE";
+        |   import "org.springframework.cloud:spring-cloud-starter-eureka" "1.1.0.RC1";
+        |
+        |   shared import "org.springframework.boot:spring-boot-starter-data-jpa" "1.3.3.RELEASE";
+        |
+        |   import maven:"postgresql:postgresql" "9.1-901-1.jdbc4"; //Using new prefix here
+        |   shared import my_repo:org.liquibase.core "3.4.2";
+        |   import maven:"junit:junit" "4.12";
+        |}""".stripMargin()
+
+        assert result
+        assert result.moduleName == 'flight'
+        assert result.version == '1.0.0'
+        assert result.imports == [
+                [ name: 'ceylon.interop.java', version: '1.2.3' ],
+                [ name: 'org.springframework.boot:spring-boot-starter-web', version: '1.3.3.RELEASE', namespace: 'maven' ],
+                [ name: 'org.springframework.boot:spring-boot-starter-undertow', version: '1.3.3.RELEASE', namespace: 'maven' ],
+                [ name: 'org.springframework.cloud:spring-cloud-starter-eureka', version: '1.1.0.RC1', namespace: 'maven' ],
+                [ name: 'org.springframework.boot:spring-boot-starter-data-jpa', version: '1.3.3.RELEASE', shared: true, namespace: 'maven' ],
+                [ name: 'postgresql:postgresql', version: '9.1-901-1.jdbc4', namespace: 'maven' ],
+                [ name: 'org.liquibase.core', version: '3.4.2', shared: true, namespace: 'my_repo' ],
+                [ name: 'junit:junit', version: '4.12', namespace: 'maven' ]
         ]
     }
 
