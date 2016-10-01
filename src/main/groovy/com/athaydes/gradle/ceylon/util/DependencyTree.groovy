@@ -78,7 +78,7 @@ class DependencyTree {
         if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
         final deps = project.configurations.getByName( 'ceylonRuntime' )
                 .allDependencies.withType( ProjectDependency )
-        deps.collect { ProjectDependency p -> p.dependencyProject }
+        deps.collect { ProjectDependency p -> p.dependencyProject } as Collection<Project>
     }
 
     static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
