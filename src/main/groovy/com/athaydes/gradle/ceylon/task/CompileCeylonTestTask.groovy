@@ -17,21 +17,11 @@ import org.gradle.api.tasks.TaskAction
 class CompileCeylonTestTask extends DefaultTask {
 
     static List inputFiles( Project project, CeylonConfig config ) {
-        [ project.buildFile,
-          GenerateOverridesFileTask.outputFiles( project, config ) ].flatten()
+        [ project.buildFile, project.files( config.testRoots, config.testResourceRoots ) ]
     }
 
     static File outputDir( Project project, CeylonConfig config ) {
         project.file( config.output )
-    }
-
-    CompileCeylonTestTask() {
-        final config = project.extensions.getByType( CeylonConfig )
-        final compilationDir = CompileCeylonTask.outputDir( project, config )
-
-        // Gradle does not support giving a List of Directories as inputs with a @InputDirectory method,
-        // so this workaround is needed
-        ( config.testRoots + config.testResourceRoots + compilationDir ).each { dir -> inputs.dir( dir ) }
     }
 
     @InputFiles

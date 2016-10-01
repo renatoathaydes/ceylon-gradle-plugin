@@ -14,21 +14,13 @@ import org.gradle.api.tasks.TaskAction
 class TestCeylonTask extends DefaultTask {
 
     static List inputFiles( Project project, CeylonConfig config ) {
-        [ project.buildFile ]
+        def tasks = { Class... types -> types.collect { Class type -> project.tasks.withType( type ) } }
+
+        [ project.buildFile, project.files( tasks( CompileCeylonTask, CompileCeylonTestTask ) ) ]
     }
 
     static List outputFiles( Project project, CeylonConfig config ) {
         [ ]
-    }
-
-    TestCeylonTask() {
-        final config = project.extensions.getByType( CeylonConfig )
-        final compilationDir = CompileCeylonTask.outputDir( project, config )
-        final testCompilationDir = CompileCeylonTestTask.outputDir( project, config )
-
-        // Gradle does not support giving a List of Directories as inputs with a @InputDirectory method,
-        // so this workaround is needed
-        [ compilationDir, testCompilationDir ].each { dir -> inputs.dir( dir ) }
     }
 
     @InputFiles

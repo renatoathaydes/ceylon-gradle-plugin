@@ -15,19 +15,12 @@ class CompileCeylonTask extends DefaultTask {
 
     static List inputFiles( Project project, CeylonConfig config ) {
         [ project.buildFile,
-          GenerateOverridesFileTask.outputFiles( project, config ) ].flatten()
+          project.files( config.sourceRoots, config.resourceRoots ),
+          project.tasks.withType( GenerateOverridesFileTask ) ]
     }
 
     static File outputDir( Project project, CeylonConfig config ) {
         project.file( config.output )
-    }
-
-    CompileCeylonTask() {
-        final config = project.extensions.getByType( CeylonConfig )
-
-        // Gradle does not support giving a List of Directories as inputs with a @InputDirectory method,
-        // so this workaround is needed
-        ( config.sourceRoots + config.resourceRoots ).each { dir -> inputs.dir( dir ) }
     }
 
     @InputFiles

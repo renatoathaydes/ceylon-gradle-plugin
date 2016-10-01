@@ -11,25 +11,13 @@ import org.gradle.api.tasks.InputFiles
 class CleanTask extends Delete {
 
     static List inputFiles( Project project, CeylonConfig config ) {
-        GenerateOverridesFileTask.outputFiles( project, config ) +
-                CreateMavenRepoTask.outputFiles( project, config ) +
-                MavenSettingsFileCreator.mavenSettingsFile( project, config )
-    }
-
-    CleanTask() {
-        final config = project.extensions.getByType( CeylonConfig )
-
-        // Gradle does not support giving a List of Directories as inputs with a @InputDirectory method,
-        // so this workaround is needed
-        [
-                project.buildDir,
-                CompileCeylonTask.outputDir( project, config ),
-                CreateMavenRepoTask.outputDir( project, config ),
-                CompileCeylonTestTask.outputDir( project, config ),
-                CreateDependenciesPomsTask.outputDir( project, config ),
-                CreateJavaRuntimeTask.outputDir( project, config ),
-                CreateModuleDescriptorsTask.outputDir( project, config )
-        ].each { File dir -> inputs.dir( dir ) }
+        def tasks = { Class... types -> types.collect { Class type -> project.tasks.withType( type ) } }
+        [ project.buildDir,
+          MavenSettingsFileCreator.mavenSettingsFile( project, config ),
+          project.files( tasks(
+                  CompileCeylonTask, GenerateOverridesFileTask, CreateMavenRepoTask,
+                  CompileCeylonTestTask, CreateDependenciesPomsTask,
+                  CreateJavaRuntimeTask, CreateModuleDescriptorsTask ) ) ]
     }
 
     @InputFiles
