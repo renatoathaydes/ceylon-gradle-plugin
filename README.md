@@ -17,11 +17,11 @@ about this plugin to understand more about the motivations behind this project.
 To use this plugin, simply add a Gradle build file to the root of your project
 and apply this plugin as shown below:
 
-* Gradle 2.1+
+* Gradle 2.1+ and 3.0+
 
 ```groovy
 plugins {
-    id 'com.athaydes.ceylon' version '1.2.0'
+    id 'com.athaydes.ceylon' version '1.3.0'
 }
 ```
 
@@ -35,7 +35,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.2.0"
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.3.0"
     }
 }
 
