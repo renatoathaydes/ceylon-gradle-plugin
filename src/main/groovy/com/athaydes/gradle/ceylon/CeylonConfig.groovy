@@ -27,4 +27,8 @@ class CeylonConfig {
         this.@testModule ?: module
     }
 
+    void setModuleName( String name ) {
+        this.module = name
+    }
+
 }

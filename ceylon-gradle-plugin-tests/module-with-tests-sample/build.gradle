@@ -9,7 +9,7 @@ repositories {
 }
 
 ceylon {
-    module = "com.athaydes.simple"
+    moduleName = "com.athaydes.simple"
     testModule = "test.com.athaydes.simple"
     testRoots = [ 'test-source' ]
     flatClasspath = false
