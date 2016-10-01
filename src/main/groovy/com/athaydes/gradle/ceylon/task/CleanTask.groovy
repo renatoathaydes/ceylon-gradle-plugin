@@ -16,7 +16,7 @@ class CleanTask extends Delete {
           MavenSettingsFileCreator.mavenSettingsFile( project, config ),
           project.files( tasks(
                   CompileCeylonTask, GenerateOverridesFileTask, CreateMavenRepoTask,
-                  CompileCeylonTestTask, CreateDependenciesPomsTask,
+                  CompileCeylonTestTask, CreateDependenciesPomsTask, TestCeylonTask,
                   CreateJavaRuntimeTask, CreateModuleDescriptorsTask ) ) ]
     }
 

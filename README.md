@@ -135,7 +135,9 @@ The following properties can be set in the `ceylon` block:
 * `sourceRoots`: (default: `['source']`) List of directories where the Ceylon source code is located.
 * `resourceRoots`: (default: `['resource']`) List of directories where resources are located.
 * `testRoots`: (default `['source']`) List of directories where Ceylon test code is located.
-* `testResourceRoots` (default `['test-resource']`) List of directories where test resources are located.
+* `testResourceRoots`: (default `['test-resource']`) List of directories where test resources are located.
+* `generateTestReport`: (default `true`) whether to ask Ceylon test to generate test reports after running tests.
+* `testReportDestination`: (default `<buildDir>/reports`) directory to save test reports into.
 * `output`: (default: `modules`) specifies the output module repository.
 * `module`: (**mandatory**) name of the Ceylon module.
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.

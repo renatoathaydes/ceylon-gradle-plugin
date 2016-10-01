@@ -68,8 +68,13 @@ class CeylonCommandOptions {
     }
 
     static List getTestOptions( Project project, CeylonConfig config ) {
-        // no specific run options yet
-        getCommonOptions( project, config )
+        def options = [ ]
+
+        if ( config.generateTestReport ) {
+            options << '--report'
+        }
+
+        getCommonOptions( project, config ) + options
     }
 
     static List getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {

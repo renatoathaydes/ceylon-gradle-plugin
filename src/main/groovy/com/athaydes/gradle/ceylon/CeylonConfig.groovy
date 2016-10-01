@@ -22,6 +22,8 @@ class CeylonConfig {
     String entryPoint
 
     String testModule = ''
+    boolean generateTestReport = true
+    String testReportDestination
 
     String getTestModule() {
         this.@testModule ?: module

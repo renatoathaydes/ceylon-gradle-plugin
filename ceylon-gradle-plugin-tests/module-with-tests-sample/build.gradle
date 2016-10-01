@@ -12,6 +12,8 @@ ceylon {
     moduleName = "com.athaydes.simple"
     testModule = "test.com.athaydes.simple"
     testRoots = [ 'test-source' ]
+    testReportDestination = 'test-reports'
+    generateTestReport = true
     flatClasspath = false
     javaRuntimeDestination = file( 'target/jvm' )
     entryPoint = 'com.athaydes.simple::addArgs'
