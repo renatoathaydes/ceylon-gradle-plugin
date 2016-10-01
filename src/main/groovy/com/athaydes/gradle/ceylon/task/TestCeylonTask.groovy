@@ -40,11 +40,13 @@ class TestCeylonTask extends DefaultTask {
     void run() {
         final config = project.extensions.getByType( CeylonConfig )
 
-        CeylonRunner.run 'test', config.testModule, project, config,
-                CeylonCommandOptions.getTestOptions( project, config )
-
-        if ( config.generateTestReport ) {
-            moveTestReports( project, config )
+        try {
+            CeylonRunner.run 'test', config.testModule, project, config,
+                    CeylonCommandOptions.getTestOptions( project, config )
+        } finally {
+            if ( config.generateTestReport ) {
+                moveTestReports( project, config )
+            }
         }
     }
 
