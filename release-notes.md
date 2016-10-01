@@ -1,3 +1,13 @@
+1.3.0 - 2016 October 01
+
+* pull request #14: consume the output of the Ceylon process to avoid causing it to hang in Windows
+* issue #13: added support for importing modules with a namespace (feature added in Ceylon 1.3.0).
+* redesigned the plugin tasks to use Gradle annotations rather than the runtime API.
+* improved declarations of tasks inputs and outputs.
+* added @CompileStatic Groovy annotation to all tasks. Fixed small issues that were revealed by that.
+* added "moduleName" alias for the "module" property to allow users to avoid Gradle warning as "module" is a known property.
+* added generateTestReport and testReportDestination to Ceylon config - call ceylon test with --report flag by default.
+
 1.2.0 - 2016 June 19
 
 * issue #9: tap into Gradle lifecycle tasks such as assemble, build and check
