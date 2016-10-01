@@ -5,12 +5,12 @@ import com.athaydes.gradle.ceylon.util.MavenSettingsFileCreator
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.TaskAction
 
 @CompileStatic
 class CleanTask extends Delete {
 
-    static List inputFiles( Project project, CeylonConfig config ) {
+    static List filesToDelete( Project project, CeylonConfig config ) {
         def tasks = { Class... types -> types.collect { Class type -> project.tasks.withType( type ) } }
         [ project.buildDir,
           MavenSettingsFileCreator.mavenSettingsFile( project, config ),
@@ -20,10 +20,12 @@ class CleanTask extends Delete {
                   CreateJavaRuntimeTask, CreateModuleDescriptorsTask ) ) ]
     }
 
-    @InputFiles
-    List getInputFiles() {
+    @TaskAction
+    @Override
+    void clean() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputFiles( project, config )
+        delete filesToDelete( project, config )
+        super.clean()
     }
 
 }
