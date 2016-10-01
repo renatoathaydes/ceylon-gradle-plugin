@@ -139,7 +139,7 @@ The following properties can be set in the `ceylon` block:
 * `generateTestReport`: (default `true`) whether to ask Ceylon test to generate test reports after running tests.
 * `testReportDestination`: (default `<buildDir>/reports`) directory to save test reports into.
 * `output`: (default: `modules`) specifies the output module repository.
-* `module`: (**mandatory**) name of the Ceylon module.
+* `module` or `moduleName`: (**mandatory**) name of the Ceylon module.
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.
 * `moduleExclusions`: (default: `[]`) name of the modules to remove from the compilation and runtime.
 * `overrides`: (default: `'build/overrides.xml'`) location to store the automatically-generated overrides.xml file.
