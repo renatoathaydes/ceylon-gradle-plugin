@@ -3,28 +3,30 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.parse.CeylonModuleParser
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
 
+@CompileStatic
 class ResolveCeylonDependenciesTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( ResolveCeylonDependenciesTask )
     public static final String CEYLON_DEPENDENCIES = 'CeylonDependencies'
 
-    static List inputs( Project project, CeylonConfig config ) {
-        // lazily-evaluated elements
-        [ { moduleFile( project, config ) }, { project.allprojects*.buildFile } ]
+    static List inputFiles( Project project, CeylonConfig config ) {
+        [ moduleFile( project, config ), project.allprojects.collect { Project p -> p.buildFile } ].flatten()
     }
 
     @InputFiles
     List getFileInputs() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputs( project, config )
+        inputFiles( project, config )
     }
 
     @TaskAction
@@ -41,10 +43,10 @@ class ResolveCeylonDependenciesTask extends DefaultTask {
 
         def moduleDeclaration = parse module.path, module.text
 
-        def mavenDependencies = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
+        def mavenDependencies = moduleDeclaration.imports.findAll { Map imp -> imp.namespace == 'maven' } as List<Map>
 
         def existingDependencies = project.configurations.getByName( 'ceylonCompile' ).dependencies.collect {
-            "${it.group}:${it.name}:${it.version}"
+            Dependency dep -> "${dep.group}:${dep.name}:${dep.version}"
         }
 
         log.debug "Project existing dependencies: {}", existingDependencies
@@ -86,7 +88,8 @@ class ResolveCeylonDependenciesTask extends DefaultTask {
 
         List locations = [ ]
         for ( root in config.sourceRoots ) {
-            def modulePath = ( [ root ] +
+            def rootPath = project.file( root ).absolutePath
+            def modulePath = ( [ rootPath ] +
                     moduleNameParts +
                     [ 'module.ceylon' ] ).join( '/' )
 

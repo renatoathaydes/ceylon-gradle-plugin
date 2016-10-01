@@ -3,34 +3,44 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
+@CompileStatic
 class TestCeylonTask extends DefaultTask {
 
-    static List inputs( Project project, CeylonConfig config ) {
-        [ project.buildFile,
-          CompileCeylonTask.outputs( project, config ),
-          CompileCeylonTestTask.outputs( project, config ) ]
+    static List inputFiles( Project project, CeylonConfig config ) {
+        [ project.buildFile ]
     }
 
-    static List outputs( Project project, CeylonConfig config ) {
+    static List outputFiles( Project project, CeylonConfig config ) {
         [ ]
     }
 
-    @InputFiles
-    def getInputFiles() {
+    TestCeylonTask() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputs( project, config )
+        final compilationDir = CompileCeylonTask.outputDir( project, config )
+        final testCompilationDir = CompileCeylonTestTask.outputDir( project, config )
+
+        // Gradle does not support giving a List of Directories as inputs with a @InputDirectory method,
+        // so this workaround is needed
+        [ compilationDir, testCompilationDir ].each { dir -> inputs.dir( dir ) }
+    }
+
+    @InputFiles
+    List getInputFiles() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputFiles( project, config )
     }
 
     @OutputFiles
-    def getOutputFiles() {
+    List getOutputFiles() {
         final config = project.extensions.getByType( CeylonConfig )
-        outputs( project, config )
+        outputFiles( project, config )
     }
 
     @TaskAction

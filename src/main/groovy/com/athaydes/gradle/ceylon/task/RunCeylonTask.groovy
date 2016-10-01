@@ -3,9 +3,11 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
+@CompileStatic
 class RunCeylonTask extends DefaultTask {
 
     @TaskAction

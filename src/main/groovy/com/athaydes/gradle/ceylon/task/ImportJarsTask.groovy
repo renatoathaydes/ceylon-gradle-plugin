@@ -4,6 +4,8 @@ import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Nullable
@@ -13,32 +15,33 @@ import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
+@CompileStatic
 class ImportJarsTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( ImportJarsTask )
 
-    static List inputs( Project project, CeylonConfig config ) {
+    static List inputFiles( Project project, CeylonConfig config ) {
         // TODO jars from other projects should be added here
-        ResolveCeylonDependenciesTask.inputs( project, config )
+        ResolveCeylonDependenciesTask.inputFiles( project, config )
     }
 
-    static def outputs( Project project, CeylonConfig config ) {
-        { -> ceylonRepo( project, config ) }
+    static File outputDir( Project project, CeylonConfig config ) {
+        ceylonRepo( project, config )
     }
 
     @InputFiles
-    def getInputFiles() {
+    List getInputFiles() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputs( project, config )
+        inputFiles( project, config )
     }
 
-    @OutputFiles
-    def getOutputFiles() {
+    @OutputDirectory
+    File getOutputDir() {
         final config = project.extensions.getByType( CeylonConfig )
-        outputs( project, config )
+        outputDir( project, config )
     }
 
     @TaskAction
@@ -75,6 +78,7 @@ class ImportJarsTask extends DefaultTask {
         project.file( config.output )
     }
 
+    @CompileDynamic
     private static void importCeylonProject( Project project, File repo, Project dependency ) {
         log.info( 'Trying to import dependency {} as a Ceylon project', dependency.name )
 
@@ -112,7 +116,7 @@ class ImportJarsTask extends DefaultTask {
         log.info( "Will try to install {} into the Ceylon repository", artifact.name )
         def jarFile = artifact.file
 
-        def module = "${dependency.moduleGroup}.${dependency.moduleName}/${dependency.moduleVersion}"
+        def module = "${dependency.moduleGroup}.${dependency.moduleName}/${dependency.moduleVersion}".toString()
 
         if ( module.contains( '-' ) ) {
             log.warn( "Importing module with illegal character '-' in name: $module. Will replace '-' with '_'." )
@@ -134,7 +138,7 @@ class ImportJarsTask extends DefaultTask {
         def ceylonConfig = dependency.extensions.findByName( 'ceylon' )
 
         if ( ceylonConfig instanceof CeylonConfig ) {
-            return dependency.file( ceylonConfig.output )
+            return dependency.file( ( ceylonConfig as CeylonConfig ).output )
         } else {
             return null
         }

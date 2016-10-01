@@ -1,12 +1,15 @@
 package com.athaydes.gradle.ceylon.util
 
+import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 
 /**
  * Tree of dependencies. The root of the tree will contain all project dependencies.
  */
+@CompileStatic
 class DependencyTree {
 
     private final Collection<Map> imports
@@ -17,7 +20,7 @@ class DependencyTree {
     final Collection<Project> ceylonDependencies
 
     DependencyTree( Project project, Map moduleDeclaration ) {
-        this.imports = moduleDeclaration.imports.findAll { it.name.contains( ':' ) }
+        this.imports = moduleDeclaration.imports.findAll { Map imp -> imp.namespace == 'maven' }
         this.moduleName = moduleDeclaration.moduleName
         this.moduleVersion = moduleDeclaration.version
 
@@ -73,13 +76,14 @@ class DependencyTree {
 
     static Collection<Project> directCeylonDependenciesOf( Project project ) {
         if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
-        project.configurations.ceylonRuntime.allDependencies
-                .withType( ProjectDependency )*.dependencyProject
+        final deps = project.configurations.getByName( 'ceylonRuntime' )
+                .allDependencies.withType( ProjectDependency )
+        deps.collect { ProjectDependency p -> p.dependencyProject }
     }
 
     static Collection<ResolvedDependency> directDependenciesOf( Project project ) {
         if ( !project.configurations.findByName( 'ceylonRuntime' ) ) return [ ]
-        project.configurations.ceylonRuntime
+        project.configurations.getByName( 'ceylonRuntime' )
                 .resolvedConfiguration.firstLevelModuleDependencies.collectEntries {
             [ it.name, it ]
         }.values()
@@ -92,10 +96,12 @@ class DependencyTree {
     }
 
     private static Collection<ResolvedDependency> onlyJars(
-            Collection<ResolvedDependency> dependencies ) {
-        dependencies.findAll { ResolvedDependency dep ->
-            dep.moduleArtifacts.any { it.type == 'jar' }
-        }
+            Collection dependencies ) {
+        dependencies.findAll { dep ->
+            dep instanceof ResolvedDependency &&
+                    ( dep as ResolvedDependency ).moduleArtifacts
+                            .any { ResolvedArtifact artifact -> artifact.type == 'jar' }
+        } as Collection<ResolvedDependency>
     }
 
 }

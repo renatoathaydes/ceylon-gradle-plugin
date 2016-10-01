@@ -3,13 +3,16 @@ package com.athaydes.gradle.ceylon.task
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.CeylonCommandOptions
 import com.athaydes.gradle.ceylon.util.CeylonRunner
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 import java.util.regex.Pattern
@@ -17,44 +20,53 @@ import java.util.regex.Pattern
 /**
  * Task to create a Java runtime that can be run without Ceylon, using only the JVM.
  */
+@CompileStatic
 class CreateJavaRuntimeTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( CreateJavaRuntimeTask )
 
-    private static String javaRuntimeDir( Project project, CeylonConfig config ) {
-        config.javaRuntimeDestination ?: new File( project.buildDir, 'java-runtime' ).absolutePath
+    private static def javaRuntimeDir( Project project, CeylonConfig config ) {
+        config.javaRuntimeDestination ?: new File( project.buildDir, 'java-runtime' )
     }
 
-    static List inputs( Project project, CeylonConfig config ) {
+    static List inputFiles( Project project, CeylonConfig config ) {
         [ project.buildFile,
-          GenerateOverridesFileTask.outputs( project, config ),
-          CreateMavenRepoTask.outputs( project, config ),
-          CompileCeylonTask.outputs( project, config )
+          GenerateOverridesFileTask.outputFiles( project, config ),
+          CreateMavenRepoTask.outputFiles( project, config ),
         ].flatten()
     }
 
-    static List outputs( Project project, CeylonConfig config ) {
-        [ javaRuntimeDir( project, config ) ]
+    static File inputDir( Project project, CeylonConfig config ) {
+        CompileCeylonTask.outputDir( project, config )
     }
 
+    static File outputDir( Project project, CeylonConfig config ) {
+        project.file( javaRuntimeDir( project, config ) )
+    }
+
+    @InputDirectory
+    File getInputDir() {
+        final config = project.extensions.getByType( CeylonConfig )
+        inputDir( project, config )
+    }
 
     @InputFiles
-    def getInputFiles() {
+    List getInputFiles() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputs( project, config )
+        inputFiles( project, config )
     }
 
-    @OutputFiles
-    def getOutputFiles() {
+    @OutputDirectory
+    File getOutputDir() {
         final config = project.extensions.getByType( CeylonConfig )
-        outputs( project, config )
+        outputDir( project, config )
     }
 
     @TaskAction
     void run() {
         final config = project.extensions.getByType( CeylonConfig )
 
-        def destination = new File( javaRuntimeDir( project, config ) )
+        def destination = project.file( javaRuntimeDir( project, config ) )
 
         log.debug( "Destination of JVM runtime: ${destination.absolutePath}" )
 
@@ -95,13 +107,13 @@ class CreateJavaRuntimeTask extends DefaultTask {
     }
 
     private static String findMain( CeylonConfig config ) {
-        def main = config.entryPoint ?: "${config.module}::run"
+        def main = ( config.entryPoint ?: "${config.module}::run" ).toString()
         def startNameIndex = main.indexOf( '::' ) + 2
         if ( startNameIndex < 2 ) {
             throw new GradleException( "Invalid entry point: '$main'. Must be of form pkg.name::functionName or pkg.name::ClassName" )
         }
 
-        if ( ( main[ startNameIndex ] as Character ).lowerCase ) {
+        if ( Character.isLowerCase( main[ startNameIndex ] as char ) ) {
             // ceylon function name ends with '_' in the JVM
             main += '_'
         }
@@ -110,6 +122,7 @@ class CreateJavaRuntimeTask extends DefaultTask {
         return main.replace( '::', '.' )
     }
 
+    @CompileDynamic
     private static List<String> moveFilesToDestination( Project project, String classpath, File destination ) {
         def separator = System.getProperty( 'path.separator' )
         def paths = classpath.split( Pattern.quote( separator ) )

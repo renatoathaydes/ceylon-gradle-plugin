@@ -12,6 +12,7 @@ import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
 import com.athaydes.gradle.ceylon.task.RunCeylonTask
 import com.athaydes.gradle.ceylon.task.TestCeylonTask
+import groovy.transform.CompileStatic
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -21,6 +22,7 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Delete
 import org.gradle.language.base.plugins.LanguageBasePlugin
 
+@CompileStatic
 class CeylonPlugin implements Plugin<Project> {
 
     static final Logger log = Logging.getLogger( CeylonPlugin )
@@ -35,8 +37,8 @@ class CeylonPlugin implements Plugin<Project> {
 
         log.debug( "CeylonPlugin being applied to project: ${project.name}" )
 
-        CeylonConfig config = project.extensions
-                .create( 'ceylon', CeylonConfig )
+        final config = project.extensions
+                .create( 'ceylon', CeylonConfig ) as CeylonConfig
 
         createConfigs project, config
         createTasks project, config
@@ -157,7 +159,7 @@ class CeylonPlugin implements Plugin<Project> {
                 description: 'Removes the output of all tasks of the Ceylon plugin.',
                 'cleanCeylon' )
 
-        project.tasks.withType( Delete ) { clean ->
+        project.tasks.withType( Delete ) { Delete clean ->
             if ( clean != cleanTask ) {
                 clean.dependsOn cleanTask
             }

@@ -2,6 +2,8 @@ package com.athaydes.gradle.ceylon.task
 
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.util.DependencyTree
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -13,30 +15,30 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
+@CompileStatic
 class GenerateOverridesFileTask extends DefaultTask {
 
     static final Logger log = Logging.getLogger( GenerateOverridesFileTask )
 
-    static List inputs( Project project, CeylonConfig config ) {
+    static List inputFiles( Project project, CeylonConfig config ) {
         // this task's inputs are  exactly the same as the resolve task
-        ResolveCeylonDependenciesTask.inputs( project, config )
+        ResolveCeylonDependenciesTask.inputFiles( project, config )
     }
 
-    static List outputs( Project project, CeylonConfig config ) {
-        // lazily-evaluated elements
-        [ { overridesFile( project, config ) } ]
+    static List outputFiles( Project project, CeylonConfig config ) {
+        [ overridesFile( project, config ) ]
     }
 
     @InputFiles
     List getInputFiles() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputs( project, config )
+        inputFiles( project, config )
     }
 
     @OutputFiles
     List getOutputFiles() {
         final config = project.extensions.getByType( CeylonConfig )
-        outputs( project, config )
+        outputFiles( project, config )
     }
 
     @TaskAction
@@ -84,6 +86,7 @@ class GenerateOverridesFileTask extends DefaultTask {
         writeOverridesFile overridesFile, dependencyTree, moduleExclusions
     }
 
+    @CompileDynamic
     private static writeOverridesFile( File overridesFile,
                                        DependencyTree dependencyTree,
                                        List<Map> moduleExclusions ) {
@@ -92,10 +95,10 @@ class GenerateOverridesFileTask extends DefaultTask {
 
             xml.overrides {
                 writeExclusions moduleExclusions, xml
-                dependencyTree.moduleDeclaredDependencies.each { dep ->
+                dependencyTree.moduleDeclaredDependencies.each { ResolvedDependency dep ->
                     def name = "${dep.moduleGroup}:${dep.moduleName}"
-                    if ( moduleExclusions.find { it.module == name } ) {
-                        log.info "Skipping transitive dependencies of module {} because it is excluded", id
+                    if ( moduleExclusions.find { Map exc -> exc.module == name } ) {
+                        log.info "Skipping transitive dependencies of module {} because it is excluded", name
                     } else {
                         def shared = dependencyTree.isShared( dep )
                         def transitiveDeps = DependencyTree.transitiveDependenciesOf( dep )
@@ -108,6 +111,7 @@ class GenerateOverridesFileTask extends DefaultTask {
         }
     }
 
+    @CompileDynamic
     private static void writeDependency( ResolvedDependency dep, String name, boolean shared,
                                          Collection<ResolvedDependency> transitiveDeps,
                                          MarkupBuilder xml ) {
@@ -120,6 +124,7 @@ class GenerateOverridesFileTask extends DefaultTask {
         }
     }
 
+    @CompileDynamic
     protected static void writeExclusions( List<Map> moduleExclusions, MarkupBuilder xml ) {
         moduleExclusions.each { item ->
             xml.remove( item )

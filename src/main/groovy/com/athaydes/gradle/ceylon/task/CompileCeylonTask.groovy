@@ -6,38 +6,40 @@ import com.athaydes.gradle.ceylon.util.CeylonRunner
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 @CompileStatic
 class CompileCeylonTask extends DefaultTask {
 
-    static final Logger log = Logging.getLogger( CompileCeylonTask )
-
-    static List inputs( Project project, CeylonConfig config ) {
+    static List inputFiles( Project project, CeylonConfig config ) {
         [ project.buildFile,
-          { project.files( config.sourceRoots ) },
-          { project.files( config.resourceRoots ) },
-          GenerateOverridesFileTask.outputs( project, config ) ].flatten()
+          GenerateOverridesFileTask.outputFiles( project, config ) ].flatten()
     }
 
-    static List outputs( Project project, CeylonConfig config ) {
-        [ { project.file( config.output ) } ]
+    static File outputDir( Project project, CeylonConfig config ) {
+        project.file( config.output )
+    }
+
+    CompileCeylonTask() {
+        final config = project.extensions.getByType( CeylonConfig )
+
+        // Gradle does not support giving a List of Directories as inputs with a @InputDirectory method,
+        // so this workaround is needed
+        ( config.sourceRoots + config.resourceRoots ).each { dir -> inputs.dir( dir ) }
     }
 
     @InputFiles
-    def getInputFiles() {
+    List getInputFiles() {
         final config = project.extensions.getByType( CeylonConfig )
-        inputs( project, config )
+        inputFiles( project, config )
     }
 
-    @OutputFiles
-    def getOutputFiles() {
+    @OutputDirectory
+    File getOutputDir() {
         final config = project.extensions.getByType( CeylonConfig )
-        outputs( project, config )
+        outputDir( project, config )
     }
 
     @TaskAction
