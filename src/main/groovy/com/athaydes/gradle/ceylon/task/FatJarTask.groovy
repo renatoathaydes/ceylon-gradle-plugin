@@ -40,7 +40,7 @@ class FatJarTask extends DefaultTask {
         final config = project.extensions.getByType( CeylonConfig )
 
         CeylonRunner.run 'fat-jar', config.module, project, config,
-                CeylonCommandOptions.getCompileOptions( project, config )
+                CeylonCommandOptions.getFatJarOptions( project, config )
     }
 
 }

@@ -35,6 +35,10 @@ class CeylonCommandOptions {
         project.file( config.output )
     }
 
+    private static File getFatOut(Project project,CeylonConfig config){
+            project.file(config.jarOutput)
+    }
+
     static List getTestCompileOptions( Project project, CeylonConfig config ) {
         def options = [ ]
 
@@ -55,6 +59,15 @@ class CeylonCommandOptions {
         config.resourceRoots.each { options << "--resource $it" }
 
         return getCommonOptions( project, config ) + options
+    }
+
+    static List getFatJarOptions(Project project,CeylonConfig config){
+        def options = [ ]
+        def out = getFatOut(project, config)
+        if(out!=null){
+            options << "--out=$out.absolutePath}"
+        }
+        return options
     }
 
     static List getRunOptions( Project project, CeylonConfig config ) {
