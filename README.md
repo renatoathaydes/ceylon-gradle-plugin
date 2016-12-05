@@ -194,12 +194,20 @@ Notes:
 
 All direct dependencies of your project must be declared in Ceylon `module.ceylon` file.
 
-However, as Ceylon does not automatically resolve transitive Maven dependencies, the Ceylon-Gradle Plugin reads
+However, as Ceylon does not automatically resolve transitive Maven dependencies (note: this has changed in Ceylon 1.2.3 with the [`--fully-export-maven-dependencies`](https://ceylon-lang.org/documentation/current/reference/tool/ceylon/subcommands/ceylon-compile.html#option--fully-export-maven-dependencies) flag), the Ceylon-Gradle Plugin reads
 the `module.ceylon` file and creates an
 [overrides.xml](http://ceylon-lang.org/documentation/1.2/reference/repository/overrides/)
 file that informs Ceylon what those transitive dependencies are.
 
 The dependencies are resolved using Gradle's standard mechanism, so you can use any repository supported by Gradle.
+
+Notice that you can exclude some particular dependency easily using Gradle. For example, to exclude dependencies with group `ch.qos.logback` (and all its transtive dependencies as well) add this to your Gradle file:
+
+```groovy
+configurations {
+    all*.exclude group: "ch.qos.logback"
+}
+```
 
 ### Using a flat classpath VS Ceylon module system
 
