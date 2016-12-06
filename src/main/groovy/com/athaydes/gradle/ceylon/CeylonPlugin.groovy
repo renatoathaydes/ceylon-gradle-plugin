@@ -29,7 +29,7 @@ class CeylonPlugin implements Plugin<Project> {
     static final Logger log = Logging.getLogger(CeylonPlugin)
 
     @Override
-    void apply(Project project) {
+    void apply( Project project ) {
         try {
             project.pluginManager.apply(LanguageBasePlugin)
         } catch (PluginApplicationException e) {
@@ -45,7 +45,7 @@ class CeylonPlugin implements Plugin<Project> {
         createTasks project, config
     }
 
-    private static createConfigs(Project project, CeylonConfig config) {
+    private static createConfigs( Project project, CeylonConfig config ) {
         // there must be a default configuration or other projects cannot depend on this one
         project.configurations.maybeCreate('default')
 
@@ -53,7 +53,7 @@ class CeylonPlugin implements Plugin<Project> {
         project.configurations.create('ceylonRuntime').extendsFrom compileConfig
     }
 
-    private static createTasks(Project project, CeylonConfig config) {
+    private static createTasks( Project project, CeylonConfig config ) {
         Task resolveDepsTask = project.task(
                 type: ResolveCeylonDependenciesTask,
                 group: 'Build tasks',

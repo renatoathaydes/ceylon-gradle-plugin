@@ -13,10 +13,8 @@ import org.gradle.api.tasks.TaskAction
 @CompileStatic
 class FatJarTask extends DefaultTask {
 
-    static List inputFiles( Project project, CeylonConfig config ) {
-        [ project.buildFile,
-          project.files( config.sourceRoots, config.resourceRoots ),
-          project.tasks.withType( GenerateOverridesFileTask ) ]
+    static List inputFiles( Project project ) {
+        [project.tasks.withType( CompileCeylonTask )]
     }
 
     static File outputDir( Project project, CeylonConfig config ) {
@@ -25,8 +23,7 @@ class FatJarTask extends DefaultTask {
 
     @InputFiles
     List getInputFiles() {
-        final config = project.extensions.getByType( CeylonConfig )
-        inputFiles( project, config )
+        inputFiles( project )
     }
 
     @OutputDirectory

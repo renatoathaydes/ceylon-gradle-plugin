@@ -11,15 +11,15 @@ class CeylonCommandOptions {
     static final Logger log = Logging.getLogger( CeylonCommandOptions )
 
     static List getCommonOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+        def options = []
         def overrides = GenerateOverridesFileTask.overridesFile( project, config )
-        if ( overrides.exists() ) {
+        if (overrides.exists()) {
             options << "--overrides ${overrides.absolutePath}"
         } else {
             log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
         }
 
-        if ( config.flatClasspath ) {
+        if (config.flatClasspath) {
             options << '--flat-classpath'
         }
 
@@ -27,20 +27,20 @@ class CeylonCommandOptions {
     }
 
     private static List getRepositoryOptions( Project project, CeylonConfig config ) {
-        [ "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}",
-          "--rep=${project.file( config.output ).absolutePath}" ]
+        ["--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}",
+         "--rep=${project.file( config.output ).absolutePath}"]
     }
 
     private static File getOut( Project project, CeylonConfig config ) {
         project.file( config.output )
     }
 
-    private static File getFatOut(Project project,CeylonConfig config){
-            project.file(config.jarOutput)
+    private static File getFatOut( Project project, CeylonConfig config ) {
+        project.file( config.jarOutput )
     }
 
     static List getTestCompileOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+        def options = []
 
         options << "--out=${getOut( project, config ).absolutePath}"
 
@@ -51,7 +51,7 @@ class CeylonCommandOptions {
     }
 
     static List getCompileOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+        def options = []
 
         options << "--out=${getOut( project, config ).absolutePath}"
 
@@ -61,19 +61,19 @@ class CeylonCommandOptions {
         return getCommonOptions( project, config ) + options
     }
 
-    static List getFatJarOptions(Project project,CeylonConfig config){
-        def options = [ ]
-        def out = getFatOut(project, config)
-        if(out!=null){
+    static List getFatJarOptions( Project project, CeylonConfig config ) {
+        def options = []
+        def out = getFatOut( project, config )
+        if (out != null) {
             options << "--out=$out.absolutePath}"
         }
         return options
     }
 
     static List getRunOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+        def options = []
 
-        if ( config.entryPoint ) {
+        if (config.entryPoint) {
             options << "--run=${config.entryPoint}"
         }
 
@@ -81,9 +81,9 @@ class CeylonCommandOptions {
     }
 
     static List getTestOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+        def options = []
 
-        if ( config.generateTestReport ) {
+        if (config.generateTestReport) {
             options << '--report'
         }
 
@@ -91,10 +91,10 @@ class CeylonCommandOptions {
     }
 
     static List getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {
-        [ "${config.verbose ? '--verbose ' : ' '}",
-          "${config.forceImports ? '--force ' : ' '}",
-          "--descriptor=${moduleDescriptor.absolutePath} ",
-          "--out=${getOut( project, config ).absolutePath}" ] +
+        ["${config.verbose ? '--verbose ' : ' '}",
+         "${config.forceImports ? '--force ' : ' '}",
+         "--descriptor=${moduleDescriptor.absolutePath} ",
+         "--out=${getOut( project, config ).absolutePath}"] +
                 getRepositoryOptions( project, config )
     }
 
