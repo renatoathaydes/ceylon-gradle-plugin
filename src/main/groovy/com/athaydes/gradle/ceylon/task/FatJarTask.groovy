@@ -17,6 +17,7 @@ class FatJarTask extends DefaultTask {
         [project.tasks.withType( CompileCeylonTask )]
     }
 
+
     static File outputDir( Project project, CeylonConfig config ) {
         project.file( config.output )
     }

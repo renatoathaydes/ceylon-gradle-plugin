@@ -36,7 +36,11 @@ class CeylonCommandOptions {
     }
 
     private static File getFatOut( Project project, CeylonConfig config ) {
-        project.file( config.jarOutput )
+        def file = project.file( config.output )
+        assert config.moduleVersion != null: "Must provide \"moduleVersion\" config for fat jar deployment"
+        def jarPath = file.absolutePath + file.separator + "$config.module-$config.moduleVersion" + '.jar'
+        file = project.file( jarPath )
+        return file
     }
 
     static List getTestCompileOptions( Project project, CeylonConfig config ) {
@@ -64,9 +68,9 @@ class CeylonCommandOptions {
     static List getFatJarOptions( Project project, CeylonConfig config ) {
         def options = []
         def out = getFatOut( project, config )
-        if (out != null) {
-            options << "--out=$out.absolutePath}"
-        }
+        print "fat Jar output at: $out.absolutePath"
+        options << "--out=${out.absolutePath}"
+
         return options
     }
 

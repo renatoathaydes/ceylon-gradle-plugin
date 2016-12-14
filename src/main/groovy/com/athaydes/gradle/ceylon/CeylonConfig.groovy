@@ -20,7 +20,7 @@ class CeylonConfig {
     Boolean verbose = false
     String javaRuntimeDestination
     String entryPoint
-    String jarOutput
+    String moduleVersion
     String testModule = ''
     boolean generateTestReport = true
     String testReportDestination
