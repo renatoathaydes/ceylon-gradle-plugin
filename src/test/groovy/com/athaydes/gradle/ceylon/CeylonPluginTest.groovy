@@ -21,7 +21,7 @@ class CeylonPluginTest {
         assert project.tasks.resolveCeylonDependencies
         assert project.tasks.generateOverridesFile
         assert project.tasks.importJars
-
+        assert project.tasks.fatJar
         assert project.extensions.ceylon instanceof CeylonConfig
 
         assert project.configurations.ceylonCompile

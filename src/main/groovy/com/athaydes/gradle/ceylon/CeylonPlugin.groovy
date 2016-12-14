@@ -1,17 +1,6 @@
 package com.athaydes.gradle.ceylon
 
-import com.athaydes.gradle.ceylon.task.CleanTask
-import com.athaydes.gradle.ceylon.task.CompileCeylonTask
-import com.athaydes.gradle.ceylon.task.CompileCeylonTestTask
-import com.athaydes.gradle.ceylon.task.CreateDependenciesPomsTask
-import com.athaydes.gradle.ceylon.task.CreateJavaRuntimeTask
-import com.athaydes.gradle.ceylon.task.CreateMavenRepoTask
-import com.athaydes.gradle.ceylon.task.CreateModuleDescriptorsTask
-import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
-import com.athaydes.gradle.ceylon.task.ImportJarsTask
-import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
-import com.athaydes.gradle.ceylon.task.RunCeylonTask
-import com.athaydes.gradle.ceylon.task.TestCeylonTask
+import com.athaydes.gradle.ceylon.task.*
 import groovy.transform.CompileStatic
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -31,7 +20,7 @@ class CeylonPlugin implements Plugin<Project> {
     void apply( Project project ) {
         try {
             project.pluginManager.apply( LanguageBasePlugin )
-        } catch ( PluginApplicationException e ) {
+        } catch (PluginApplicationException e) {
             log.debug( "Failed to apply LanguageBasePlugin - it had already been applied", e )
         }
 
@@ -108,7 +97,7 @@ class CeylonPlugin implements Plugin<Project> {
         project.task(
                 type: ImportJarsTask,
                 group: 'Build tasks',
-                dependsOn: [ 'resolveCeylonDependencies', 'createMavenRepo', 'createModuleDescriptors' ],
+                dependsOn: ['resolveCeylonDependencies', 'createMavenRepo', 'createModuleDescriptors'],
                 description: 'Import transitive Maven dependencies and copies the output from dependent Ceylon ' +
                         'projects into the local Ceylon repository .\n' +
                         'To enable importing Maven dependencies, the Ceylon config property "importJars" must ' +
@@ -118,7 +107,7 @@ class CeylonPlugin implements Plugin<Project> {
         Task compileTask = project.task(
                 type: CompileCeylonTask,
                 group: 'Build tasks',
-                dependsOn: [ 'generateOverridesFile', 'importJars', 'createMavenRepo' ],
+                dependsOn: ['generateOverridesFile', 'importJars', 'createMavenRepo'],
                 description: 'Compiles Ceylon and Java source code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylon' )
@@ -133,7 +122,7 @@ class CeylonPlugin implements Plugin<Project> {
         project.task(
                 type: CompileCeylonTestTask,
                 group: 'Build tasks',
-                dependsOn: [ 'compileCeylon' ],
+                dependsOn: ['compileCeylon'],
                 description: 'Compiles Ceylon and Java test code and directly' +
                         ' produces module and source archives in a module repository.',
                 'compileCeylonTest' )
@@ -141,18 +130,25 @@ class CeylonPlugin implements Plugin<Project> {
         Task testTask = project.task(
                 type: TestCeylonTask,
                 group: 'Verification tasks',
-                dependsOn: [ 'compileCeylonTest' ],
+                dependsOn: ['compileCeylonTest'],
                 description: 'Runs all tests in a Ceylon module.',
                 'testCeylon' )
 
         project.task(
                 type: CreateJavaRuntimeTask,
                 group: 'Build tasks',
-                dependsOn: [ 'compileCeylon' ],
+                dependsOn: ['compileCeylon'],
                 description: 'Creates a Java runtime containing the full classpath' +
                         ' as well as bash and bat scripts that can be used to invoke Java to run the Ceylon module' +
                         ' in a JVM without any Ceylon tool.',
                 'createJavaRuntime' )
+
+        project.task(
+                type: FatJarTask,
+                group: 'Build tasks',
+                dependsOn: ['compileCeylon'],
+                description: 'Creates a fat jar that can be used to deploy the Ceylon project more easily as a Java application.',
+                'fatJar' )
 
         def cleanTask = project.task(
                 type: CleanTask,
@@ -160,7 +156,7 @@ class CeylonPlugin implements Plugin<Project> {
                 'cleanCeylon' )
 
         project.tasks.withType( Delete ) { Delete clean ->
-            if ( clean != cleanTask ) {
+            if (clean != cleanTask) {
                 clean.dependsOn cleanTask
             }
         }
