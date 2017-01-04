@@ -11,7 +11,7 @@ ceylon {
     moduleName = "com.athaydes.fatJar"
 }
 
-task runFatJar(type: Exec) {
+task runFatJar(type: Exec, dependsOn: 'fatJar') {
     commandLine (System.getProperty( 'java.home' ) + '/bin/java', '-jar',
             new File(buildDir, 'com.athaydes.fatJar-1.0.0.jar').absolutePath)
 
