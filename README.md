@@ -90,6 +90,7 @@ The Ceylon-Gradle Plugin adds the following tasks to your project:
 * `runCeylon` - runs the Ceylon module (see the `entryPoint` config property).
 * `testCeylon` - runs the tests in the test module.
 * `createJavaRuntime` - creates a directory with all resources required to run the Ceylon application with only the JVM.
+* `fatJar` - creates a fat jar that can be used to deploy the Ceylon project more easily as a Java application.
 
 > Lifecycle tasks such as `build` and `check` also work with the Ceylon Plugin.
 
@@ -137,21 +138,24 @@ The following properties can be set in the `ceylon` block:
 * `testRoots`: (default `['source']`) List of directories where Ceylon test code is located.
 * `testResourceRoots`: (default `['test-resource']`) List of directories where test resources are located.
 * `generateTestReport`: (default `true`) whether to ask Ceylon test to generate test reports after running tests.
-* `testReportDestination`: (default `<buildDir>/reports`) directory to save test reports into.
+* `testReportDestination`: (default `${project.buildDir}/reports`) directory to save test reports into.
 * `output`: (default: `modules`) specifies the output module repository.
 * `module` or `moduleName`: (**mandatory**) name of the Ceylon module.
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.
 * `moduleExclusions`: (default: `[]`) name of the modules to remove from the compilation and runtime.
-* `overrides`: (default: `'build/overrides.xml'`) location to store the automatically-generated overrides.xml file.
-* `mavenSettings`: (default: `'build/maven-settings.xml'`) location of Maven settings file.
+* `overrides`: (default: `'${project.buildDir}/overrides.xml'`) location to store the automatically-generated overrides.xml file.
+* `mavenSettings`: (default: `'${project.buildDir}/maven-settings.xml'`) location of Maven settings file.
    If the file already exists, it is not overwritten, otherwise an appropriate file is generated (recommended).
 * `flatClasspath`: (default: `true`) use a flat classpath (like in standard Java), bypassing Ceylon's default module isolation.
 * `importJars`: (default: `false`) import dependencies' jar files into the Ceylon repository.
 * `forceImports`: (default: `false`) use the `--force` option when importing dependencies' jar files into the 
   Ceylon repository.
 * `verbose`: (default: `false`) use the `--verbose` option when invoking Ceylon commands.
-* `javaRuntimeDestination`: (default: `build/java-runtime`) directory to save JVM resources created by the `createJavaRuntime` task.
-* `entryPoint`: (default: `${moduleName}::run`) top-level element to run when calling the `runCeylon` task or the bash scripts.
+* `javaRuntimeDestination`: (default: `${project.buildDir}/java-runtime`) directory to save JVM resources created 
+   by the `createJavaRuntime` task.
+* `fatJarDestination`: (default `${project.buildDir}`)
+* `entryPoint`: (default: `${moduleName}::run`) top-level element to run when calling the `runCeylon` task 
+   or the bash scripts created by the `createJavaRuntime` task.
 
 An example configuration (using most options above) might look like this:
 
