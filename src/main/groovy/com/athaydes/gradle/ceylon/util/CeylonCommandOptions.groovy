@@ -1,12 +1,11 @@
 package com.athaydes.gradle.ceylon.util
 
 import com.athaydes.gradle.ceylon.CeylonConfig
+import com.athaydes.gradle.ceylon.task.FatJarTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
-
-import static com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES
 
 class CeylonCommandOptions {
 
@@ -37,13 +36,6 @@ class CeylonCommandOptions {
         project.file( config.output )
     }
 
-    private static File getFatJarOut( Project project, CeylonConfig config ) {
-        def fatJarDestination = config.fatJarDestination ?: project.buildDir.absolutePath
-        def dependencyTree = project.extensions.getByName( CEYLON_DEPENDENCIES ) as DependencyTree
-        def jarPath = "${fatJarDestination}/$config.module-${dependencyTree.moduleVersion}.jar"
-        return project.file( jarPath )
-    }
-
     static List getTestCompileOptions( Project project, CeylonConfig config ) {
         def options = [ ]
 
@@ -68,10 +60,9 @@ class CeylonCommandOptions {
 
     static List getFatJarOptions( Project project, CeylonConfig config ) {
         def options = [ ]
-        def out = getFatJarOut( project, config )
-        print "fat Jar output at: $out.absolutePath"
+        def out = FatJarTask.outputJar( project, config )
+        log.info "Creating fat-jar at: $out.absolutePath"
         options << "--out=${out.absolutePath}"
-
         return options
     }
 
