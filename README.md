@@ -153,7 +153,7 @@ The following properties can be set in the `ceylon` block:
 * `verbose`: (default: `false`) use the `--verbose` option when invoking Ceylon commands.
 * `javaRuntimeDestination`: (default: `${project.buildDir}/java-runtime`) directory to save JVM resources created 
    by the `createJavaRuntime` task.
-* `fatJarDestination`: (default `${project.buildDir}`)
+* `fatJarDestination`: (default `${project.buildDir}`) directory to save the fat jar created by the `fatJar` task.
 * `entryPoint`: (default: `${moduleName}::run`) top-level element to run when calling the `runCeylon` task 
    or the bash scripts created by the `createJavaRuntime` task.
 
