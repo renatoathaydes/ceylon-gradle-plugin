@@ -1,4 +1,3 @@
-apply plugin: 'java'
 apply plugin: 'com.athaydes.ceylon'
 
 group 'com.athaydes.gradle.ceylon'
@@ -9,6 +8,23 @@ repositories {
 }
 
 ceylon {
-    module = "com.athaydes.fatJar"
-    moduleVersion = version
+    moduleName = "com.athaydes.fatJar"
+}
+
+task runFatJar(type: Exec) {
+    commandLine (System.getProperty( 'java.home' ) + '/bin/java', '-jar',
+            new File(buildDir, 'com.athaydes.fatJar-1.0.0.jar').absolutePath)
+
+    standardOutput = new ByteArrayOutputStream()
+
+    ext.output = {
+        return standardOutput.toString()
+    }
+
+    doLast {
+        String javaOutput = runFatJar.output()
+        print javaOutput
+        assert javaOutput.endsWith(' INFO  com.athaydes.fatJar.MyTestClass - Hello from Ceylon fatJAR!\n')
+        println "Ceylon FatJar was created successfully!"
+    }
 }
