@@ -2,16 +2,17 @@ package com.athaydes.gradle.ceylon
 
 import groovy.transform.ToString
 
-@ToString(includeNames = true)
+@ToString( includeNames = true )
 class CeylonConfig {
     def ceylonLocation = null
-    List sourceRoots = ['source']
-    List resourceRoots = ['resource']
-    List testResourceRoots = ['test-resource']
-    List testRoots = ['source']
+    List sourceRoots = [ 'source' ]
+    List resourceRoots = [ 'resource' ]
+    List testResourceRoots = [ 'test-resource' ]
+    List testRoots = [ 'source' ]
     String output = 'modules'
+    String fatJarDestination
     String module = ''
-    List moduleExclusions = []
+    List moduleExclusions = [ ]
     String overrides
     String mavenSettings
     Boolean flatClasspath = true
@@ -20,7 +21,6 @@ class CeylonConfig {
     Boolean verbose = false
     String javaRuntimeDestination
     String entryPoint
-    String moduleVersion
     String testModule = ''
     boolean generateTestReport = true
     String testReportDestination
