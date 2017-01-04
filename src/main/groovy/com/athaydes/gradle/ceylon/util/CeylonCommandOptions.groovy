@@ -6,20 +6,22 @@ import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
+import static com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask.CEYLON_DEPENDENCIES
+
 class CeylonCommandOptions {
 
     static final Logger log = Logging.getLogger( CeylonCommandOptions )
 
     static List getCommonOptions( Project project, CeylonConfig config ) {
-        def options = []
+        def options = [ ]
         def overrides = GenerateOverridesFileTask.overridesFile( project, config )
-        if (overrides.exists()) {
+        if ( overrides.exists() ) {
             options << "--overrides ${overrides.absolutePath}"
         } else {
             log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
         }
 
-        if (config.flatClasspath) {
+        if ( config.flatClasspath ) {
             options << '--flat-classpath'
         }
 
@@ -27,24 +29,23 @@ class CeylonCommandOptions {
     }
 
     private static List getRepositoryOptions( Project project, CeylonConfig config ) {
-        ["--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}",
-         "--rep=${project.file( config.output ).absolutePath}"]
+        [ "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}",
+          "--rep=${project.file( config.output ).absolutePath}" ]
     }
 
     private static File getOut( Project project, CeylonConfig config ) {
         project.file( config.output )
     }
 
-    private static File getFatOut( Project project, CeylonConfig config ) {
-        def file = project.file( config.output )
-        assert config.moduleVersion != null: "Must provide \"moduleVersion\" config for fat jar deployment"
-        def jarPath = file.absolutePath + file.separator + "$config.module-$config.moduleVersion" + '.jar'
-        file = project.file( jarPath )
-        return file
+    private static File getFatJarOut( Project project, CeylonConfig config ) {
+        def fatJarDestination = config.fatJarDestination ?: project.buildDir.absolutePath
+        def dependencyTree = project.extensions.getByName( CEYLON_DEPENDENCIES ) as DependencyTree
+        def jarPath = "${fatJarDestination}/$config.module-${dependencyTree.moduleVersion}.jar"
+        return project.file( jarPath )
     }
 
     static List getTestCompileOptions( Project project, CeylonConfig config ) {
-        def options = []
+        def options = [ ]
 
         options << "--out=${getOut( project, config ).absolutePath}"
 
@@ -55,7 +56,7 @@ class CeylonCommandOptions {
     }
 
     static List getCompileOptions( Project project, CeylonConfig config ) {
-        def options = []
+        def options = [ ]
 
         options << "--out=${getOut( project, config ).absolutePath}"
 
@@ -66,8 +67,8 @@ class CeylonCommandOptions {
     }
 
     static List getFatJarOptions( Project project, CeylonConfig config ) {
-        def options = []
-        def out = getFatOut( project, config )
+        def options = [ ]
+        def out = getFatJarOut( project, config )
         print "fat Jar output at: $out.absolutePath"
         options << "--out=${out.absolutePath}"
 
@@ -75,9 +76,9 @@ class CeylonCommandOptions {
     }
 
     static List getRunOptions( Project project, CeylonConfig config ) {
-        def options = []
+        def options = [ ]
 
-        if (config.entryPoint) {
+        if ( config.entryPoint ) {
             options << "--run=${config.entryPoint}"
         }
 
@@ -85,9 +86,9 @@ class CeylonCommandOptions {
     }
 
     static List getTestOptions( Project project, CeylonConfig config ) {
-        def options = []
+        def options = [ ]
 
-        if (config.generateTestReport) {
+        if ( config.generateTestReport ) {
             options << '--report'
         }
 
@@ -95,10 +96,10 @@ class CeylonCommandOptions {
     }
 
     static List getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {
-        ["${config.verbose ? '--verbose ' : ' '}",
-         "${config.forceImports ? '--force ' : ' '}",
-         "--descriptor=${moduleDescriptor.absolutePath} ",
-         "--out=${getOut( project, config ).absolutePath}"] +
+        [ "${config.verbose ? '--verbose ' : ' '}",
+          "${config.forceImports ? '--force ' : ' '}",
+          "--descriptor=${moduleDescriptor.absolutePath} ",
+          "--out=${getOut( project, config ).absolutePath}" ] +
                 getRepositoryOptions( project, config )
     }
 
