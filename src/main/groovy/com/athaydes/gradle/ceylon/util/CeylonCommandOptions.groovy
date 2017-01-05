@@ -11,7 +11,7 @@ class CeylonCommandOptions {
 
     static final Logger log = Logging.getLogger( CeylonCommandOptions )
 
-    static List getCommonOptions( Project project, CeylonConfig config ) {
+    static List getCommonOptions( Project project, CeylonConfig config, boolean includeFlatClasspath = true ) {
         def options = [ ]
         def overrides = GenerateOverridesFileTask.overridesFile( project, config )
         if ( overrides.exists() ) {
@@ -20,7 +20,7 @@ class CeylonCommandOptions {
             log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
         }
 
-        if ( config.flatClasspath ) {
+        if ( includeFlatClasspath && config.flatClasspath ) {
             options << '--flat-classpath'
         }
 
@@ -62,8 +62,14 @@ class CeylonCommandOptions {
         def options = [ ]
         def out = FatJarTask.outputJar( project, config )
         log.info "Creating fat-jar at: $out.absolutePath"
+
         options << "--out=${out.absolutePath}"
-        return options
+
+        if ( config.entryPoint ) {
+            options << "--run=${config.entryPoint}"
+        }
+
+        return getCommonOptions( project, config, false ) + options
     }
 
     static List getRunOptions( Project project, CeylonConfig config ) {
