@@ -76,10 +76,7 @@ class CreateJavaRuntimeTask extends DefaultTask {
         }
 
         CeylonRunner.withCeylon( config ) { String ceylon ->
-            def options = CeylonCommandOptions.getCommonOptions( project, config )
-
-            // unnecessary option
-            options.remove( '--flat-classpath' )
+            def options = CeylonCommandOptions.getCommonOptions( project, config, false )
 
             def command = "${ceylon} classpath ${options.join( ' ' )} ${config.module}"
 
