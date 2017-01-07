@@ -6,6 +6,7 @@ import com.athaydes.gradle.ceylon.util.CeylonRunner
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
@@ -22,6 +23,9 @@ class FatJarTask extends DefaultTask {
 
     static File outputJar( Project project, CeylonConfig config ) {
         def fatJarDestination = config.fatJarDestination ?: project.buildDir.absolutePath
+        if ( !fatJarDestination || fatJarDestination == '/' ) {
+            throw new GradleException( 'Ceylon fatJarDestination must not be set to empty' )
+        }
         def dependencyTree = project.extensions.getByName( CEYLON_DEPENDENCIES ) as DependencyTree
         def jarPath = "${fatJarDestination}/$config.module-${dependencyTree.moduleVersion}.jar"
         return project.file( jarPath )
