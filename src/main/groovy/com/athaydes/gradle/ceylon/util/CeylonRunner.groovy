@@ -29,8 +29,20 @@ class CeylonRunner {
                      List<String> options, List<String> finalArgs = [ ] ) {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
+        List<String> ceylonArgs = [ ]
+
+        if ( project.hasProperty( 'ceylon-args' ) ) {
+            ceylonArgs << project.property( 'ceylon-args' )?.toString()
+        }
+
+        def textFor = { List<String> list -> if ( list.empty ) '' else ' ' + list.join( ' ' ) }
+
+        def optionsText = textFor( options )
+        def ceylonArgsText = textFor( ceylonArgs )
+        def finalArgsText = textFor( finalArgs )
+
         withCeylon( config ) { String ceylon ->
-            def command = "${ceylon} ${ceylonDirective} ${options.join( ' ' )} ${module} ${finalArgs.join( ' ' )}"
+            def command = "${ceylon} ${ceylonDirective}${optionsText}${ceylonArgsText} ${module}${finalArgsText}"
 
             if ( project.hasProperty( 'get-ceylon-command' ) ) {
                 println command

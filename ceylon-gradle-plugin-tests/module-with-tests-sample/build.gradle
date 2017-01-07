@@ -8,6 +8,9 @@ repositories {
     mavenCentral()
 }
 
+// example of providing arguments directly to the Ceylon tool
+project.ext.'ceylon-args' = '--fully-export-maven-dependencies'
+
 ceylon {
     moduleName = "com.athaydes.simple"
     testModule = "test.com.athaydes.simple"

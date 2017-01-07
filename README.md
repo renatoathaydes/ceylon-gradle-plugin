@@ -117,11 +117,25 @@ For even more output, use `--debug`.
 
 * `get-ceylon-command`: if the project has this property, any Ceylon commands that would have been called by this plugin
   are simply printed to stdout instead of actually being called.
-  
+* `ceylon-args`: allows arguments to be provided directly to the Ceylon tool.
+* `app-args`: allows arguments to be provided to the Ceylon application (only used by the `runCeylon` task).
+
 Example usage:
 
 ```
 gradle -P get-ceylon-command runCeylon
+```
+
+```
+# this can be used to activate Ceylon tool options that are not supported by the Gradle Plugin 
+gradle compileCeylon -Pceylon-args="--fully-export-maven-dependencies"
+```
+
+>> Notice that you can also set properties in Gradle build files, so the above could be achieved by adding
+   this line to your build file: `project.ext.'ceylon-args' = '--fully-export-maven-dependencies'`
+
+```
+gradle runCeylon -Papp-args="--my-command-options other-option"
 ```
 
 ## Configuring the Ceylon build
