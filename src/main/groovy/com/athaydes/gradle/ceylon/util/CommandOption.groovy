@@ -2,6 +2,7 @@ package com.athaydes.gradle.ceylon.util
 
 import groovy.transform.CompileStatic
 import groovy.transform.Immutable
+import org.gradle.api.Nullable
 
 /**
  * A simple command option.
@@ -14,18 +15,19 @@ import groovy.transform.Immutable
 @CompileStatic
 class CommandOption {
     String option
-    Optional<String> argument
+    @Nullable
+    String argument
 
     @Override
     String toString() {
-        option + argument.map { '=' + it }.orElse( '' )
+        option + ( argument ? '=' + argument : '' )
     }
 
     String withQuotedArgument() {
-        option + argument.map { /="$it"/.toString() }.orElse( '' )
+        option + ( argument ? '="' + argument + '"' : '' )
     }
 
     static CommandOption of( String option, String argument = null ) {
-        new CommandOption( option, Optional.ofNullable( argument ) )
+        new CommandOption( option, argument )
     }
 }
