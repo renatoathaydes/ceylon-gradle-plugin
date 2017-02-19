@@ -1,5 +1,8 @@
 # Ceylon Gradle Plugin
 
+[![Build Status](https://travis-ci.org/renatoathaydes/ceylon-gradle-plugin.svg?branch=master)](https://travis-ci.org/renatoathaydes/ceylon-gradle-plugin)
+[ ![Download](https://api.bintray.com/packages/renatoathaydes/maven/ceylon-gradle-plugin/images/download.svg) ](https://bintray.com/renatoathaydes/maven/ceylon-gradle-plugin/_latestVersion)
+
 This is a Gradle Plugin to make it easy to handle Ceylon projects with Gradle.
 
 Because Ceylon itself manages Ceylon dependencies, this plugin focuses on
