@@ -13,9 +13,14 @@ class RunCeylonTask extends DefaultTask {
     @TaskAction
     void run() {
         final config = project.extensions.getByType( CeylonConfig )
+        final List<String> finalArgs = [ ]
+
+        if ( project.hasProperty( 'app-args' ) ) {
+            finalArgs << project.property( 'app-args' )?.toString()
+        }
 
         CeylonRunner.run 'run', config.module, project, config,
-                CeylonCommandOptions.getRunOptions( project, config )
+                CeylonCommandOptions.getRunOptions( project, config ), finalArgs
     }
 
 }

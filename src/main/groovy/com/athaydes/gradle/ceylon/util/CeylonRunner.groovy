@@ -26,17 +26,35 @@ class CeylonRunner {
     }
 
     static void run( String ceylonDirective, String module, Project project, CeylonConfig config,
-                     List<String> options, List<String> finalArgs = [ ] ) {
+                     List<CommandOption> options, List<String> finalArgs = [ ] ) {
         log.info "Executing ceylon '$ceylonDirective' in project ${project.name}"
 
+        List<String> ceylonArgs = [ ]
+
+        if ( project.hasProperty( 'ceylon-args' ) ) {
+            ceylonArgs << project.property( 'ceylon-args' )?.toString()
+        }
+
         withCeylon( config ) { String ceylon ->
-            def command = "${ceylon} ${ceylonDirective} ${options.join( ' ' )} ${module} ${finalArgs.join( ' ' )}"
 
             if ( project.hasProperty( 'get-ceylon-command' ) ) {
-                println command
+                def textFor = { List<String> list -> if ( list.empty ) '' else ' ' + list.join( ' ' ) }
+
+                def optionsText = textFor( options.collect { it.withQuotedArgument() } )
+                def ceylonArgsText = textFor( ceylonArgs )
+                def finalArgsText = textFor( finalArgs )
+
+                def commandText = "${ceylon} ${ceylonDirective}${optionsText}${ceylonArgsText} ${module}${finalArgsText}"
+                println commandText
             } else {
-                log.info( "Running command: $command" )
-                def process = command.execute( ( List ) null, project.file( '.' ) )
+                def commandList = [ ceylon, ceylonDirective ] +
+                        options.collect { it.toString() } +
+                        ceylonArgs +
+                        [ module ] +
+                        finalArgs
+
+                log.info( "Running command: $commandList" )
+                def process = commandList.execute( ( List ) null, project.file( '.' ) )
 
                 consumeOutputOf process
 

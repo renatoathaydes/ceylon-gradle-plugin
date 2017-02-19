@@ -79,7 +79,9 @@ class ResolveCeylonDependenciesTask extends DefaultTask {
                           |ceylon {
                           |  module = 'name.of.ceylon.module'
                           |}
-                          |'''.stripMargin() )
+                          |
+                          |If you prefer, you can set the default module in the Ceylon config file instead, 
+                          |and that will be used by Gradle.'''.stripMargin() )
 
             throw new GradleException( "The Ceylon module must be specified" )
         }

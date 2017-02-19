@@ -1,3 +1,12 @@
+1.3.1 - 2017 February 19
+
+* issue #18: added support for fatJar Ceylon task.
+* improved Ceylon tasks groups to fit Gradle standards.
+* issue #15: use Ceylon tool config file if available.
+* allow providing arguments directly to the Ceylon tool.
+* allow providing arguments to the Ceylon process with the `runCeylon` task.
+* issue #22: paths containing whitespaces can now be used anywhere.
+
 1.3.0 - 2016 October 01
 
 * pull request #14: consume the output of the Ceylon process to avoid causing it to hang in Windows

@@ -1,0 +1,31 @@
+apply plugin: 'com.athaydes.ceylon'
+
+group 'com.athaydes.gradle.ceylon'
+version '1.0'
+
+repositories {
+    mavenLocal()
+}
+
+ceylon {
+    moduleName = "com.athaydes.fatJar"
+}
+
+task test( type: Exec, dependsOn: 'fatJar', group: 'verification',
+        description: 'Runs the Ceylon fatJar using Java and asserts the process output is as expected' ) {
+    commandLine( System.getProperty( 'java.home' ) + '/bin/java', '-jar',
+            new File( buildDir, 'com.athaydes.fatJar-1.0.0.jar' ).absolutePath )
+
+    standardOutput = new ByteArrayOutputStream()
+
+    ext.output = {
+        return standardOutput.toString()
+    }
+
+    doLast {
+        String javaOutput = output()
+        print javaOutput
+        assert javaOutput.endsWith( ' INFO  com.athaydes.fatJar.MyTestClass - Hello from Ceylon fatJAR!\n' )
+        println "Ceylon FatJar was created successfully!"
+    }
+}
