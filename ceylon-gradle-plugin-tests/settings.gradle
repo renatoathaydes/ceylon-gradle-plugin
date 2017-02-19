@@ -9,4 +9,5 @@ include 'log4j-sample',
         'cross-language-modules:java-example',
         'cross-language-modules:groovy-example',
         'cross-language-modules:kotlin-example',
-        'fat-jar-tests'
+        'fat-jar-tests',
+        'module-with-whitespace-path'
