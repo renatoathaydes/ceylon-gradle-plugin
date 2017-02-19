@@ -11,7 +11,7 @@ import org.gradle.api.Nullable
  *
  * To get the argument quoted, use {@link CommandOption#withQuotedArgument()}.
  */
-@Immutable( knownImmutableClasses = [ Optional ] )
+@Immutable
 @CompileStatic
 class CommandOption {
     String option
