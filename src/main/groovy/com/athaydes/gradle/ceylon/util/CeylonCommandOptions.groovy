@@ -3,101 +3,112 @@ package com.athaydes.gradle.ceylon.util
 import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.task.FatJarTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
+import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
+@CompileStatic
 class CeylonCommandOptions {
 
     static final Logger log = Logging.getLogger( CeylonCommandOptions )
 
-    static List getCommonOptions( Project project, CeylonConfig config, boolean includeFlatClasspath = true ) {
-        def options = [ ]
+    static List<CommandOption> getCommonOptions( Project project, CeylonConfig config, boolean includeFlatClasspath = true ) {
+        List<CommandOption> options = [ ]
         def overrides = GenerateOverridesFileTask.overridesFile( project, config )
         if ( overrides.exists() ) {
-            options << /--overrides "${overrides.absolutePath}"/
+            options << CommandOption.of( '--overrides', overrides.absolutePath )
         } else {
             log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
         }
 
         if ( includeFlatClasspath && config.flatClasspath ) {
-            options << '--flat-classpath'
+            options << CommandOption.of( '--flat-classpath' )
         }
 
         return options + getRepositoryOptions( project, config )
     }
 
-    private static List getRepositoryOptions( Project project, CeylonConfig config ) {
-        [ /--rep="aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}"/,
-          /--rep="${project.file( config.output ).absolutePath}"/ ]
+    private static List<CommandOption> getRepositoryOptions( Project project, CeylonConfig config ) {
+        def mavenSettings = MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath
+        [ CommandOption.of( '--rep', /aether:$mavenSettings/ ),
+          CommandOption.of( '--rep', project.file( config.output ).absolutePath ) ]
     }
 
     private static File getOut( Project project, CeylonConfig config ) {
         project.file( config.output )
     }
 
-    static List getTestCompileOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+    static List<CommandOption> getTestCompileOptions( Project project, CeylonConfig config ) {
+        List<CommandOption> options = [ ]
 
-        options << /--out="${getOut( project, config ).absolutePath}"/
+        options << CommandOption.of( '--out', getOut( project, config ).absolutePath )
 
-        config.testRoots.each { options << "--source $it" }
-        config.testResourceRoots.each { options << "--resource $it" }
-
-        return getCommonOptions( project, config ) + options
-    }
-
-    static List getCompileOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
-
-        options << /--out="${getOut( project, config ).absolutePath}"/
-
-        config.sourceRoots.each { options << "--source $it" }
-        config.resourceRoots.each { options << "--resource $it" }
+        config.testRoots.each { options << CommandOption.of( '--source', it?.toString() ) }
+        config.testResourceRoots.each { options << CommandOption.of( '--resource', it?.toString() ) }
 
         return getCommonOptions( project, config ) + options
     }
 
-    static List getFatJarOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+    static List<CommandOption> getCompileOptions( Project project, CeylonConfig config ) {
+        List<CommandOption> options = [ ]
+
+        options << CommandOption.of( '--out', getOut( project, config ).absolutePath )
+
+        config.sourceRoots.each { options << CommandOption.of( '--source', it?.toString() ) }
+        config.resourceRoots.each { options << CommandOption.of( '--resource', it?.toString() ) }
+
+        return getCommonOptions( project, config ) + options
+    }
+
+    static List<CommandOption> getFatJarOptions( Project project, CeylonConfig config ) {
+        List<CommandOption> options = [ ]
         def out = FatJarTask.outputJar( project, config )
-        log.info "Creating fat-jar at: $out.absolutePath"
+        log.info "Creating fat-jar at: '$out.absolutePath'"
 
-        options << "--out=${out.absolutePath}"
+        options << CommandOption.of( '--out', out.absolutePath )
 
         if ( config.entryPoint ) {
-            options << "--run=${config.entryPoint}"
+            options << CommandOption.of( '--run', config.entryPoint )
         }
 
         return getCommonOptions( project, config, false ) + options
     }
 
-    static List getRunOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+    static List<CommandOption> getRunOptions( Project project, CeylonConfig config ) {
+        List<CommandOption> options = [ ]
 
         if ( config.entryPoint ) {
-            options << "--run=${config.entryPoint}"
+            options << CommandOption.of( '--run', config.entryPoint )
         }
 
         getCommonOptions( project, config ) + options
     }
 
-    static List getTestOptions( Project project, CeylonConfig config ) {
-        def options = [ ]
+    static List<CommandOption> getTestOptions( Project project, CeylonConfig config ) {
+        List<CommandOption> options = [ ]
 
         if ( config.generateTestReport ) {
-            options << '--report'
+            options << CommandOption.of( '--report' )
         }
 
         getCommonOptions( project, config ) + options
     }
 
-    static List getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {
-        [ "${config.verbose ? '--verbose ' : ' '}",
-          "${config.forceImports ? '--force ' : ' '}",
-          /--descriptor="${moduleDescriptor.absolutePath}" /,
-          /--out="${getOut( project, config ).absolutePath}"/ ] +
-                getRepositoryOptions( project, config )
+    static List<CommandOption> getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {
+        List<CommandOption> options = [ ]
+        if ( config.verbose ) {
+            options << CommandOption.of( '--verbose' )
+        }
+        if ( config.forceImports ) {
+            options << CommandOption.of( '--force' )
+        }
+
+        options <<
+                CommandOption.of( '--descriptor', moduleDescriptor.absolutePath ) <<
+                CommandOption.of( '--out', getOut( project, config ).absolutePath )
+
+        return options + getRepositoryOptions( project, config )
     }
 
 }

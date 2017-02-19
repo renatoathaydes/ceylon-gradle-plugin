@@ -78,13 +78,17 @@ class CreateJavaRuntimeTask extends DefaultTask {
         CeylonRunner.withCeylon( config ) { String ceylon ->
             def options = CeylonCommandOptions.getCommonOptions( project, config, false )
 
-            def command = "${ceylon} classpath ${options.join( ' ' )} ${config.module}"
-
             if ( project.hasProperty( 'get-ceylon-command' ) ) {
+                def command = "${ceylon} classpath " +
+                        "${options.collect { it.withQuotedArgument() }.join( ' ' )} ${config.module}"
                 println command
             } else {
-                log.info( "Running command: $command" )
-                def process = command.execute( ( List ) null, project.file( '.' ) )
+                def commandList = [ ceylon, 'classpath' ] +
+                        options.collect { it.toString() } +
+                        [ config.module ]
+
+                log.info( "Running command: $commandList" )
+                def process = commandList.execute( ( List ) null, project.file( '.' ) )
 
                 ByteArrayOutputStream processConsumer = new ByteArrayOutputStream( 2048 )
                 CeylonRunner.consumeOutputOf process, new PrintStream( processConsumer )
