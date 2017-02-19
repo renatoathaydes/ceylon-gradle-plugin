@@ -7,7 +7,7 @@ shared void run() {
 shared void addArgs() {
     value args = process.arguments.collect(parseFloat);
     if (args.any((n) => n is Null)) {
-        print("Invalid input. Only numbers are acceptable");
+        print("Invalid input. Only numbers are acceptable. Arguments: ``process.arguments``");
     } else {
         value numbers = args.coalesced;
         value total = numbers.fold(0.0)(plus<Float>);
