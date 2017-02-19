@@ -7,6 +7,7 @@ import com.athaydes.gradle.ceylon.task.CreateDependenciesPomsTask
 import com.athaydes.gradle.ceylon.task.CreateJavaRuntimeTask
 import com.athaydes.gradle.ceylon.task.CreateMavenRepoTask
 import com.athaydes.gradle.ceylon.task.CreateModuleDescriptorsTask
+import com.athaydes.gradle.ceylon.task.FatJarTask
 import com.athaydes.gradle.ceylon.task.GenerateOverridesFileTask
 import com.athaydes.gradle.ceylon.task.ImportJarsTask
 import com.athaydes.gradle.ceylon.task.ResolveCeylonDependenciesTask
@@ -153,6 +154,12 @@ class CeylonPlugin implements Plugin<Project> {
                         ' as well as bash and bat scripts that can be used to invoke Java to run the Ceylon module' +
                         ' in a JVM without any Ceylon tool.',
                 'createJavaRuntime' )
+
+        project.task(
+                type: FatJarTask,
+                group: 'Build tasks',
+                description: 'Creates fat jar.',
+                'fatJar' )
 
         def cleanTask = project.task(
                 type: CleanTask,
