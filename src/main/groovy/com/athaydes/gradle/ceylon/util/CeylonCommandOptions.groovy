@@ -15,7 +15,7 @@ class CeylonCommandOptions {
         def options = [ ]
         def overrides = GenerateOverridesFileTask.overridesFile( project, config )
         if ( overrides.exists() ) {
-            options << "--overrides ${overrides.absolutePath}"
+            options << /--overrides "${overrides.absolutePath}"/
         } else {
             log.warn( 'The overrides.xml file could not be located: {}', overrides.absolutePath )
         }
@@ -28,8 +28,8 @@ class CeylonCommandOptions {
     }
 
     private static List getRepositoryOptions( Project project, CeylonConfig config ) {
-        [ "--rep=aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}",
-          "--rep=${project.file( config.output ).absolutePath}" ]
+        [ /--rep="aether:${MavenSettingsFileCreator.mavenSettingsFile( project, config ).absolutePath}"/,
+          /--rep="${project.file( config.output ).absolutePath}"/ ]
     }
 
     private static File getOut( Project project, CeylonConfig config ) {
@@ -39,7 +39,7 @@ class CeylonCommandOptions {
     static List getTestCompileOptions( Project project, CeylonConfig config ) {
         def options = [ ]
 
-        options << "--out=${getOut( project, config ).absolutePath}"
+        options << /--out="${getOut( project, config ).absolutePath}"/
 
         config.testRoots.each { options << "--source $it" }
         config.testResourceRoots.each { options << "--resource $it" }
@@ -50,7 +50,7 @@ class CeylonCommandOptions {
     static List getCompileOptions( Project project, CeylonConfig config ) {
         def options = [ ]
 
-        options << "--out=${getOut( project, config ).absolutePath}"
+        options << /--out="${getOut( project, config ).absolutePath}"/
 
         config.sourceRoots.each { options << "--source $it" }
         config.resourceRoots.each { options << "--resource $it" }
@@ -95,8 +95,8 @@ class CeylonCommandOptions {
     static List getImportJarsOptions( Project project, CeylonConfig config, File moduleDescriptor ) {
         [ "${config.verbose ? '--verbose ' : ' '}",
           "${config.forceImports ? '--force ' : ' '}",
-          "--descriptor=${moduleDescriptor.absolutePath} ",
-          "--out=${getOut( project, config ).absolutePath}" ] +
+          /--descriptor="${moduleDescriptor.absolutePath}" /,
+          /--out="${getOut( project, config ).absolutePath}"/ ] +
                 getRepositoryOptions( project, config )
     }
 
