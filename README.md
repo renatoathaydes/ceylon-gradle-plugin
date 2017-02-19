@@ -1,7 +1,7 @@
 # Ceylon Gradle Plugin
 
 [![Build Status](https://travis-ci.org/renatoathaydes/ceylon-gradle-plugin.svg?branch=master)](https://travis-ci.org/renatoathaydes/ceylon-gradle-plugin)
-[ ![Download](https://api.bintray.com/packages/renatoathaydes/maven/ceylon-gradle-plugin/images/download.svg) ](https://bintray.com/renatoathaydes/maven/ceylon-gradle-plugin/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/renatoathaydes/maven/com.athaydes.ceylon/images/download.svg) ](https://bintray.com/renatoathaydes/maven/com.athaydes.ceylon/_latestVersion)
 
 This is a Gradle Plugin to make it easy to handle Ceylon projects with Gradle.
 
@@ -20,7 +20,7 @@ about this plugin to understand more about the motivations behind this project.
 To use this plugin, simply add a Gradle build file to the root of your project
 and apply this plugin as shown below:
 
-* Gradle 2.1+ and 3.0+
+* Gradle 2.1+ and  3.0+
 
 ```groovy
 plugins {
