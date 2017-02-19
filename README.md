@@ -24,7 +24,7 @@ and apply this plugin as shown below:
 
 ```groovy
 plugins {
-    id 'com.athaydes.ceylon' version '1.3.0'
+    id 'com.athaydes.ceylon' version '1.3.1'
 }
 ```
 
@@ -38,7 +38,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.3.0"
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.3.1"
     }
 }
 
@@ -55,7 +55,11 @@ ceylon {
 }
 ```
 
-The only mandatory field is `module`, which you should set to the name of the Ceylon module.
+Many settings are read from the [Ceylon config file](https://ceylon-lang.org/documentation/1.3/reference/tool/config/),
+if available... however, all supported settings can be overridden in the Gradle file if specified explicitly.
+
+The only mandatory field (if no Ceylon config file is present) is `module`, 
+which you should set to the name of the Ceylon module.
 
 Other properties are explained in the next sections.
 
@@ -147,6 +151,7 @@ Most of the configuration of this plugin is done inside the `ceylon` block.
 
 The following properties can be set in the `ceylon` block:
 
+* `module` or `moduleName`: (**mandatory** if no Ceylon config file exists) name of the Ceylon module.
 * `ceylonLocation`: (optional) path to the ceylon executable. Set the `CEYLON_HOME` environment variable instead
   to make the build more portable, or do nothing if you use [SDKMAN!](http://sdkman.io/)
   as in that case, the Ceylon location will be found automatically.
@@ -157,7 +162,6 @@ The following properties can be set in the `ceylon` block:
 * `generateTestReport`: (default `true`) whether to ask Ceylon test to generate test reports after running tests.
 * `testReportDestination`: (default `${project.buildDir}/reports`) directory to save test reports into.
 * `output`: (default: `modules`) specifies the output module repository.
-* `module` or `moduleName`: (**mandatory**) name of the Ceylon module.
 * `testModule`: (default: same value as `module`): name of the Ceylon test module.
 * `moduleExclusions`: (default: `[]`) name of the modules to remove from the compilation and runtime.
 * `overrides`: (default: `'${project.buildDir}/overrides.xml'`) location to store the automatically-generated overrides.xml file.
