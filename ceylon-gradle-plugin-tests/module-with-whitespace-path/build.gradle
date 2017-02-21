@@ -11,4 +11,5 @@ repositories {
 ceylon {
     module = "com.athaydes.simple"
     sourceRoots = [ "All Ceylon Sources" ]
+    testRoots = [ "All Ceylon Sources" ]
 }
