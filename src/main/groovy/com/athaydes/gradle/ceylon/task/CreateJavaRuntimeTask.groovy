@@ -75,7 +75,7 @@ class CreateJavaRuntimeTask extends DefaultTask {
             throw new GradleException( "Unable to create Java runtime as directory can't be created: ${destination}" )
         }
 
-        CeylonRunner.withCeylon( config ) { String ceylon ->
+        CeylonRunner.withCeylon( config, project ) { String ceylon ->
             def options = CeylonCommandOptions.getCommonOptions( project, config, false )
 
             if ( project.hasProperty( 'get-ceylon-command' ) ) {

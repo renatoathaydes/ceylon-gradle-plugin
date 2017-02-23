@@ -12,8 +12,8 @@ class CeylonRunner {
 
     static final Logger log = Logging.getLogger( CeylonRunner )
 
-    static void withCeylon( CeylonConfig config, Closure<?> ceylonConsumer ) {
-        String ceylon = CeylonToolLocator.findCeylon( config.ceylonLocation )
+    static void withCeylon( CeylonConfig config, Project project, Closure<?> ceylonConsumer ) {
+        String ceylon = CeylonToolLocator.findCeylon( config.ceylonLocation, project )
         log.debug "Running Ceylon executable: ${ceylon}"
         try {
             ceylonConsumer ceylon
@@ -35,7 +35,7 @@ class CeylonRunner {
             ceylonArgs << project.property( 'ceylon-args' )?.toString()
         }
 
-        withCeylon( config ) { String ceylon ->
+        withCeylon( config, project ) { String ceylon ->
 
             if ( project.hasProperty( 'get-ceylon-command' ) ) {
                 def textFor = { List<String> list -> if ( list.empty ) '' else ' ' + list.join( ' ' ) }

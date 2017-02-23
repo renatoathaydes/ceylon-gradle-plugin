@@ -7,8 +7,8 @@ import java.util.concurrent.Callable
 
 class CeylonToolLocator {
 
-    static String findCeylon( configLocation ) {
-        def ceylon = findCeylonLocation( configLocation )
+    static String findCeylon( configLocation, project ) {
+        def ceylon = findCeylonLocation( configLocation, project )
         try {
             def process = ceylon.execute()
             process.consumeProcessOutput()
@@ -22,11 +22,11 @@ class CeylonToolLocator {
         }
     }
 
-    private static String findCeylonLocation( configLocation ) {
+    private static String findCeylonLocation( configLocation, project ) {
         if ( configLocation ) {
             return provided( configLocation )
         }
-        List<String> options = ceylonHomeOptions() + sdkManOptions() + osOptions()
+        List<String> options = ceylonBootstrapOptions( project ) + ceylonHomeOptions() + sdkManOptions() + osOptions()
         def ext = Os.isFamily( Os.FAMILY_WINDOWS ) ? ".bat" : ""
         def ceylon = options.collect { new File( it + ext ) }.find { it.file }
 
@@ -45,6 +45,10 @@ class CeylonToolLocator {
             default: throw new GradleException( 'ceylonLocation must be a String | File | Callable' )
         }
     }
+	
+	private static List<String> ceylonBootstrapOptions( project ) {
+		return [ "${project.projectDir.toPath().resolve( 'ceylonb' )}" ]
+	}
 
     private static List<String> ceylonHomeOptions() {
         def envVar = System.getenv( 'CEYLON_HOME' )
@@ -89,12 +93,22 @@ class CeylonToolLocator {
         |The Ceylon-Gradle Plugin could not find Ceylon.
         |
         |Please try one of these suggestions to fix the problem:
+		|
+		|* Use the ceylon bootstrap tool (follows the same concept as the
+		|  Gradle wrapper) which then will be autodetected.
+		|  In your project home run
+		|
+		|  ceylon bootstrap \$VERSION
+		|
+		|  The \$VERSION is optional. After this you'll find the ceylonb wrappers
+		|  in your project home. Of course you still need a local ceylon
+		|  installation once for this method to work.
         |
         |* Explicitly declare the Ceylon location using your build file:
         |
-        |ceylon {
-        |    ceylonLocation = "/usr/bin/ceylon" // path to Ceylon
-        |}
+        |  ceylon {
+        |      ceylonLocation = "/usr/bin/ceylon" // path to Ceylon
+        |  }
         |
         |* Set the CEYLON_HOME environment variable to the Ceylon home directory
         |  (will look for ceylon at \$CEYLON_HOME/bin/ceylon).
