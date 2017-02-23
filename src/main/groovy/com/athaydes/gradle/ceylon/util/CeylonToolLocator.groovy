@@ -7,8 +7,8 @@ import java.util.concurrent.Callable
 
 class CeylonToolLocator {
 
-    static String findCeylon( configLocation, project ) {
-        def ceylon = findCeylonLocation( configLocation, project )
+    static String findCeylon( project, configLocation ) {
+        def ceylon = findCeylonLocation( project, configLocation )
         try {
             def process = ceylon.execute()
             process.consumeProcessOutput()
@@ -22,7 +22,7 @@ class CeylonToolLocator {
         }
     }
 
-    private static String findCeylonLocation( configLocation, project ) {
+    private static String findCeylonLocation( project, configLocation ) {
         if ( configLocation ) {
             return provided( configLocation )
         }
