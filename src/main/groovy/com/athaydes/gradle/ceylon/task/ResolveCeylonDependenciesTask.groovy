@@ -4,6 +4,7 @@ import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.parse.CeylonModuleParser
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import groovy.transform.CompileStatic
+import groovy.transform.CompileDynamic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -78,12 +79,12 @@ class ResolveCeylonDependenciesTask extends DefaultTask {
 	 * @param configuration the configuration to check
 	 * @return {@code true} if the configuration can be resolved (this is always the case for Gradle < 3.4)
 	 */
+	@CompileDynamic
 	static boolean canBeResolved( Configuration configuration ) {
-		MetaMethod canBeResolvedMeta = configuration.metaClass.getMetaMethod( "isCanBeResolved" );
-		if ( canBeResolvedMeta != null ) {
-			return ( boolean ) canBeResolvedMeta.invoke( configuration, new Object[0] );
+		if ( configuration.metaClass.respondsTo( configuration, "isCanBeResolved" ) ) {
+			return configuration.isCanBeResolved()
 		}
-		return true;
+		return true
 	}
 
     static File moduleFile( Project project, CeylonConfig config ) {
