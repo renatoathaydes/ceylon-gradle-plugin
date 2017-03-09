@@ -4,9 +4,11 @@ import com.athaydes.gradle.ceylon.CeylonConfig
 import com.athaydes.gradle.ceylon.parse.CeylonModuleParser
 import com.athaydes.gradle.ceylon.util.DependencyTree
 import groovy.transform.CompileStatic
+import groovy.transform.CompileDynamic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
@@ -61,7 +63,7 @@ class ResolveCeylonDependenciesTask extends DefaultTask {
             }
         }
 
-        project.configurations*.resolve()
+        project.configurations.findAll { canBeResolved( (Configuration) it ) }*.resolve()
 
         def dependencyTree = dependencyTreeOf( project, moduleDeclaration )
 
@@ -69,6 +71,21 @@ class ResolveCeylonDependenciesTask extends DefaultTask {
 
         project.extensions.add( CEYLON_DEPENDENCIES, dependencyTree )
     }
+	
+	/**
+	 * Checks whether a configuration can actually be resolved. Since Gradle 3.4 this is not the case
+	 * anymore for all configurations and must be explicitely checked to avoid an exception.
+	 * 
+	 * @param configuration the configuration to check
+	 * @return {@code true} if the configuration can be resolved (this is always the case for Gradle < 3.4)
+	 */
+	@CompileDynamic
+	static boolean canBeResolved( Configuration configuration ) {
+		if ( configuration.metaClass.respondsTo( configuration, "isCanBeResolved" ) ) {
+			return configuration.isCanBeResolved()
+		}
+		return true
+	}
 
     static File moduleFile( Project project, CeylonConfig config ) {
         if ( !config.module ) {
